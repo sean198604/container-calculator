@@ -1,0 +1,13 @@
+{
+  "name": "container-calculator",
+  "version": "1.0.0",
+  "description": "外贸智能装柜计算器",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

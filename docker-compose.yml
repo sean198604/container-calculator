@@ -1,0 +1,15 @@
+services:
+  container-calculator:
+    build: .
+    container_name: container-calculator-7002
+    ports:
+      - "7002:7002"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - container-calculator_default
+
+networks:
+  container-calculator_default:
+    external: true

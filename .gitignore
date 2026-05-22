@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/
+.env
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.workbuddy/
