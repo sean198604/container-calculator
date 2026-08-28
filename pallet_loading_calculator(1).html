@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能外箱与托盘打托计算工具</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            margin: 0 0 10px 0;
+            color: #0f172a;
+        }
+
+        header p {
+            margin: 0;
+            color: var(--text-muted);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #475569;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-row input, .input-row select, input[type="number"], select {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-row input:focus, select:focus {
+            border-color: var(--primary-color);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input {
+            width: 16px;
+            height: 16px;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .result-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: #f1f5f9;
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #0f172a;
+        }
+
+        .result-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        .badge {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📦 智能外箱与托盘打托计算工具</h1>
+        <p>基于销售包装、外箱、托盘与集装箱约束的整柜装载优化器</p>
+    </header>
+
+    <div class="grid">
+        <!-- 输入面板 -->
+        <div class="card">
+            <div class="card-title">⚙️ 配置输入参数</div>
+            
+            <div class="form-group">
+                <label>1. 单品最小销售包装尺寸 (mm)</label>
+                <div class="input-row">
+                    <input type="number" id="prodL" placeholder="长(L)" value="150" min="1">
+                    <input type="number" id="prodW" placeholder="宽(W)" value="100" min="1">
+                    <input type="number" id="prodH" placeholder="高(H)" value="80" min="1">
+                </div>
+                <div class="input-row" style="margin-top:8px;">
+                    <input type="number" id="prodWeight" placeholder="单品重量 kg" value="1" min="0">
+                </div>
+                <div class="checkbox-group"><input type="checkbox" id="allowFlat" checked><label for="allowFlat">允许底面旋转 90°</label></div>
+                <div class="checkbox-group"><input type="checkbox" id="allowSide" checked><label for="allowSide">允许侧放 / 立放</label></div>
+                <div class="checkbox-group"><input type="checkbox" id="allowUpside"><label for="allowUpside">允许倒置</label></div>
+            </div>
+
+            <div class="form-group">
+                <label>2. 外箱厚度补偿 (单边瓦楞厚度，mm)</label>
+                <div class="input-row">
+                    <input type="number" id="cartonThickness" placeholder="例如双瓦楞 6mm" value="6" min="0">
+                </div>
+                <small style="color: var(--text-muted); font-size: 0.75rem;">外箱外径 = 内径 + 2 × 厚度</small>
+                <div class="input-row" style="margin-top:8px;"><input type="number" id="wallGap" value="3" min="0" placeholder="箱壁间隙 mm"><input type="number" id="productGap" value="2" min="0" placeholder="产品间隙 mm"></div>
+                <div class="input-row" style="margin-top:8px;"><input type="number" id="maxCartonWeight" value="25" min="0" placeholder="最大外箱重量 kg"><input type="number" id="maxPalletWeight" value="0" min="0" placeholder="最大托盘货重 kg"></div>
+            </div>
+
+            <div class="form-group">
+                <label>3. 目标海外托盘标准</label>
+                <select id="palletSelect">
+                    <option value="1219,1016,150">🇺🇸 美国 GMA — 1219 × 1016 mm</option>
+                    <option value="1200,1000,150">🇬🇧 英国常用 — 1200 × 1000 mm</option>
+                    <option value="1200,800,144">🇪🇺 欧洲 EPAL 1 — 1200 × 800 mm</option>
+                    <option value="1200,1000,162">🇪🇺 欧洲 EPAL 2 — 1200 × 1000 mm</option>
+                    <option value="1165,1165,150">🇦🇺 澳大利亚常用 — 1165 × 1165 mm</option>
+                    <option value="1100,1100,150">🇯🇵 日本/亚洲常用 — 1100 × 1100 mm</option>
+                    <option value="1140,1140,150">🇨🇳 中国常用 — 1140 × 1140 mm</option>
+                    <option value="NO_PALLET">📦 不使用托盘 / 直接装柜</option>
+                    <option value="CUSTOM">⚙️ 自定义托盘</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>4. 集装箱规格</label>
+                <select id="containerSelect" onchange="loadContainerPreset()">
+                    <option value="12031,2348,2695,2336,2585">🚢 40' High Cube (40HQ)</option>
+                    <option value="12031,2348,2390,2336,2280">🚢 40' Standard (40GP)</option>
+                    <option value="5898,2352,2390,2340,2280">🚢 20' Standard (20GP)</option>
+                    <option value="5898,2352,2695,2340,2585">🚢 20' High Cube (20HC)</option>
+                    <option value="13600,2440,2700,2400,2585">🚢 45' High Cube (45HQ)</option>
+                    <option value="CUSTOM">⚙️ 自定义集装箱</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>集装箱尺寸 / 安全约束 (mm)</label>
+                <div class="input-row">
+                    <input type="number" id="containerL" value="12031" min="1">
+                    <input type="number" id="containerW" value="2348" min="1">
+                    <input type="number" id="containerH" value="2695" min="1">
+                </div>
+                <div class="input-row" style="margin-top:8px;">
+                    <input type="number" id="doorW" value="2336" min="1">
+                    <input type="number" id="doorH" value="2585" min="1">
+                </div>
+                <div class="input-row" style="margin-top:8px;">
+                    <input type="number" id="heightClearance" value="30" min="0" title="高度安全余量">
+                    <input type="number" id="doorClearance" value="30" min="0" title="门高安全余量">
+                </div>
+                <div class="input-row" style="margin-top:8px;">
+                    <input type="number" id="maxPayload" value="26000" min="0" title="最大载重 kg">
+                    <input type="number" id="palletMaxH" value="0" min="0" title="最大打托总高 mm">
+                </div>
+                <div style="margin-top:8px;">
+                    <label>托盘本身高度(含卡板) (mm)</label>
+                    <input type="number" id="palletSelfH" value="150" min="0">
+                </div>
+            </div>
+
+            <button onclick="calc()">🚀 开始智能优化计算</button>
+        </div>
+
+        <!-- 结果面板 -->
+        <div class="card">
+            <div class="card-title">📊 优化推荐方案</div>
+            <div id="noResult" style="color: var(--text-muted); text-align: center; padding: 4px 0;">
+                输入数据并点击计算以获取最优装箱与打托推荐。
+            </div>
+            
+            <div id="resultSection" class="result-section">
+                <div class="result-card">
+                    <div class="result-title">🌟 单托盘最大单品装载量</div>
+                    <div class="result-value" id="maxTotalProducts">0 PCS</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;" id="efficiencyMetrics">
+                        外箱空间利用率: -- | 托盘高度利用率: --
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <h3>📦 阶段 1：最佳外箱结构与装载</h3>
+                    <table>
+                        <tr><th>外箱推荐装量</th><td id="resCartonQty" style="font-weight:bold;">--</td></tr>
+                        <tr><th>外箱内径尺寸</th><td id="resCartonInner">--</td></tr>
+                        <tr><th>外箱外径尺寸</th><td id="resCartonOuter">--</td></tr>
+                        <tr><th>外箱内单品排列</th><td id="resCartonArrange">--</td></tr>
+                    </table>
+
+                    <h3>🪵 阶段 2：托盘打托</h3>
+                    <table>
+                        <tr><th>单托盘外箱数</th><td id="resPalletCartons">--</td></tr>
+                        <tr><th>托盘平面矩阵</th><td id="resPalletLayer">--</td></tr>
+                        <tr><th>打托堆叠层数</th><td id="resPalletLayers">--</td></tr>
+                        <tr><th>含托盘总高度</th><td id="resTotalHeight" style="font-weight:bold;">--</td></tr>
+                        <tr><th>托盘高度剩余</th><td id="resPalletGap">--</td></tr>
+                    </table>
+                    <h3>🚢 阶段 3：集装箱装载</h3>
+                    <table>
+                        <tr><th>集装箱规格</th><td id="resContainerType">--</td></tr>
+                        <tr><th>托盘数量 / 柜</th><td id="resContainerPallets">--</td></tr>
+                        <tr><th>箱数 / 柜</th><td id="resContainerCartons">--</td></tr>
+                        <tr><th>产品数量 / 柜</th><td id="resContainerProducts">--</td></tr>
+                        <tr><th>集装箱高度剩余</th><td id="resHqGap">--</td></tr>
+                        <tr><th>集装箱重量</th><td id="resContainerWeight">--</td></tr>
+                    </table>
+                    <h3>🏆 Top 10 候选方案</h3>
+                    <div class="table-container"><table id="topResultsTable"><thead><tr><th>排名</th><th>PCS/箱</th><th>箱/托</th><th>托/柜</th><th>PCS/柜</th><th>外箱</th><th>总高</th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const uniq=a=>{const s=new Set();return a.filter(x=>{let k=JSON.stringify(x);if(s.has(k))return false;s.add(k);return true})};
+function togglePalletMode(){const v=document.getElementById('palletSelect').value;document.getElementById('customPalletFields')?.remove();if(v==='CUSTOM'){const d=document.createElement('div');d.id='customPalletFields';d.className='form-group';d.innerHTML='<label>自定义托盘尺寸 (mm)</label><div class="input-row"><input type="number" id="customPalletL" value="1200" min="1"><input type="number" id="customPalletW" value="1000" min="1"><input type="number" id="customPalletH" value="150" min="0"></div>';document.querySelector('#palletSelect').parentElement.after(d)}}
+function loadContainerPreset(){let v=document.getElementById('containerSelect').value;if(v==='CUSTOM')return;let [l,w,h,dw,dh]=v.split(',').map(Number);for(const [id,x] of Object.entries({containerL:l,containerW:w,containerH:h,doorW:dw,doorH:dh}))document.getElementById(id).value=x}
+function getPallet(){let v=document.getElementById('palletSelect').value;if(v==='NO_PALLET')return null;if(v==='CUSTOM')return {l:+customPalletL.value,w:+customPalletW.value,h:+customPalletH.value};let [l,w,h]=v.split(',').map(Number);return {l,w,h}}
+function orientations(p){let a=[];if(p.allowFlat)a.push([p.L,p.W,p.H],[p.W,p.L,p.H]);else a.push([p.L,p.W,p.H]);if(p.allowSide)a.push([p.L,p.H,p.W],[p.H,p.L,p.W],[p.W,p.H,p.L],[p.H,p.W,p.L]);if(p.allowUpside)a.push([p.H,p.W,p.L],[p.H,p.L,p.W]);return uniq(a)}
+function makeBoxes(p,c){let out=[];for(const o of orientations(p))for(let x=1;x<=15;x++)for(let y=1;y<=15;y++)for(let z=1;z<=15;z++){let il=x*o[0]+(x-1)*c.gap+2*c.wall,iw=y*o[1]+(y-1)*c.gap+2*c.wall,ih=z*o[2]+(z-1)*c.gap+2*c.wall,ol=il+2*c.t,ow=iw+2*c.t,oh=ih+2*c.t,q=x*y*z,w=q*p.weight;if(q>1&&(!c.maxW||w<=c.maxW))out.push({x,y,z,o,q,w,il,iw,ih,ol,ow,oh,util:p.L*p.W*p.H*q/(ol*ow*oh)})}return out.sort((a,b)=>b.q-a.q||b.util-a.util).slice(0,100)}
+function palletLayouts(P,b){let out=[];for(const [l,w] of [[b.ol,b.ow],[b.ow,b.ol]]){let x=Math.floor(P.l/l),y=Math.floor(P.w/w);if(x&&y)out.push({x,y,n:x*y,l,w,mixed:false})}return out.sort((a,b)=>b.n-a.n)}
+function direct(b,C,maxW){let best=null;for(const o of uniq([[b.ol,b.ow,b.oh],[b.ol,b.oh,b.ow],[b.ow,b.ol,b.oh],[b.ow,b.oh,b.ol],[b.oh,b.ol,b.ow],[b.oh,b.ow,b.ol]])){let n=Math.floor(C.L/o[0])*Math.floor(C.W/o[1])*Math.floor(C.H/o[2]),w=n*b.w;if(n&&(!maxW||w<=maxW)){let r={cartons:n,products:n*b.q,w,util:n*o[0]*o[1]*o[2]/(C.L*C.W*C.H),h:o[2],o};if(!best||r.products>best.products)best=r}}return best}
+function calc(){let p={L:+prodL.value,W:+prodW.value,H:+prodH.value,weight:+prodWeight.value||0,allowFlat:allowFlat.checked,allowSide:allowSide.checked,allowUpside:allowUpside.checked},c={t:+cartonThickness.value||0,wall:+wallGap.value||0,gap:+productGap.value||0,maxW:+maxCartonWeight.value||0},P=getPallet(),C={L:+containerL.value,W:+containerW.value,H:+containerH.value,dW:+doorW.value,dH:+doorH.value};let maxPayloadV=+maxPayload.value||0,maxPH=+palletMaxH.value||0,ph=+palletSelfH.value||0,hc=+heightClearance.value||0,dc=+doorClearance.value||0;let boxes=makeBoxes(p,c),R=[];for(const b of boxes){if(!P){let d=direct(b,C,maxPayloadV);if(d)R.push({b,d,products:d.products,cartons:d.cartons,pallets:0,h:d.h,weight:d.w,util:d.util});continue}let maxH=Math.min(C.H-hc,C.dH-dc,maxPH||Infinity),avail=maxH-P.h;if(avail<=0)continue;for(const l of palletLayouts(P,b)){let layers=Math.floor(avail/b.oh),pc=l.n*layers,w=pc*b.w;if(!layers)continue;let pallets=Math.max(0,Math.min(Math.floor(C.L/P.l)*Math.floor(C.W/P.w),Math.floor(C.L/P.w)*Math.floor(C.W/P.l)));if(!pallets)continue;if(maxPayloadV>0)pallets=Math.min(pallets,Math.floor(maxPayloadV/w));if(maxPalletWeight.value>0&&w>+maxPalletWeight.value)continue;if(pallets>0)R.push({b,l,layers,pc,pallets,cartons:pc*pallets,products:pc*pallets*b.q,h:P.h+layers*b.oh,weight:pc*pallets*b.w,util:pc*pallets*b.ol*b.ow*b.oh/(C.L*C.W*C.H)})}}R.sort((a,b)=>b.products-a.products||b.util-a.util||a.h-b.h);let r=R[0];if(!r){alert('没有找到满足当前约束的可行方案。');return}noResult.style.display='none';resultSection.style.display='block';maxTotalProducts.innerText=r.products+' PCS / CONTAINER';efficiencyMetrics.innerText=`外箱空间效率 ${(r.b.util*100).toFixed(1)}% | 集装箱体积利用率 ${(r.util*100).toFixed(1)}%`;resCartonQty.innerText=r.b.q+' PCS / 箱';resCartonInner.innerText=`${Math.round(r.b.il)} × ${Math.round(r.b.iw)} × ${Math.round(r.b.ih)} mm`;resCartonOuter.innerText=`${Math.round(r.b.ol)} × ${Math.round(r.b.ow)} × ${Math.round(r.b.oh)} mm`;resCartonArrange.innerText=`${r.b.x} × ${r.b.y} × ${r.b.z}；姿态 ${r.b.o.join(' × ')} mm`;resContainerType.innerText=containerSelect.selectedOptions[0].textContent;resContainerPallets.innerText=P?(r.pallets+' 托'):'不打托';resContainerCartons.innerText=r.cartons+' 箱';resContainerProducts.innerText=r.products+' PCS';resContainerWeight.innerText=r.weight?r.weight.toFixed(1)+' kg':'未输入重量';resHqGap.innerText=Math.max(0,C.H-r.h)+' mm';if(P){resPalletCartons.innerText=r.pc+' 箱/托盘';resPalletLayer.innerText=`${r.l.x} × ${r.l.y} = ${r.l.n} 箱/层`;resPalletLayers.innerText=r.layers+' 层';resTotalHeight.innerText=Math.round(r.h)+' mm';resPalletGap.innerText=Math.max(0,Math.min(C.H-hc,C.dH-dc,maxPH||Infinity)-r.h)+' mm'}else{resPalletCartons.innerText='不使用托盘';resPalletLayer.innerText='直接装柜';resPalletLayers.innerText='—';resTotalHeight.innerText='—';resPalletGap.innerText='—'}let tb=document.querySelector('#topResultsTable tbody');tb.innerHTML='';R.slice(0,10).forEach((x,i)=>{let tr=document.createElement('tr');tr.innerHTML=`<td>${i+1}</td><td>${x.b.q}</td><td>${x.pc??'—'}</td><td>${x.pallets}</td><td><b>${x.products}</b></td><td>${Math.round(x.b.ol)}×${Math.round(x.b.ow)}×${Math.round(x.b.oh)}</td><td>${Math.round(x.h)} mm</td>`;tb.appendChild(tr)})}
+window.calculateLoading=calc;window.onload=()=>{togglePalletMode();loadContainerPreset();calc()};
+</script>
+
+</body>
+</html>

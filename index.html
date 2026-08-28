@@ -57,7 +57,7 @@
            border-right: 1px solid var(--border);
            transition: padding .25s ease, opacity .25s ease; }
   /* 折叠时彻底收起：grid 轨道为 0 需配合 min-width:0 才能不被内容撑开 */
-  .mode-view.collapsed-left .panel,
+  .mode-view.collapsed-left .panel:not(.panel-right),
   .mode-view.collapsed-right .panel-right { width: 0; min-width: 0; padding: 0; border: none; opacity: 0; overflow: hidden; }
   .panel-right { border-right: none; border-left: 1px solid var(--border); }
   .section { margin-bottom: 16px; background: var(--panel-soft); border: 1px solid var(--border);
