@@ -12,7 +12,7 @@
     --text:#16223b; --text-2:#51607a; --text-3:#8b95a8;
     --primary:#2563eb; --primary-2:#1d4ed8; --primary-soft:#eef4ff;
     --green:#10b981; --amber:#f59e0b; --red:#ef4444;
-    --header:#ffffff; --header-2:#f4f7fb;
+    --header:#0d1b33; --header-2:#14294d;
     --radius:10px;
     --shadow-sm:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
     --shadow-md:0 4px 16px rgba(16,24,40,.08);
@@ -33,26 +33,26 @@
   .mode-view.b.collapsed-right { grid-template-columns: 396px 1fr 0; }
   .app.collapsed-left.collapsed-right, .mode-view.collapsed-left.collapsed-right,
   .mode-view.b.collapsed-left.collapsed-right { grid-template-columns: 0 1fr 0; }
-  header { background: linear-gradient(180deg, var(--header) 0%, var(--header-2) 100%);
-           color: var(--text); padding: 10px 18px;
+  header { background: linear-gradient(180deg, var(--header-2) 0%, var(--header) 100%);
+           color: #fff; padding: 10px 18px;
            display: flex; justify-content: space-between; align-items: center; gap: 14px;
-           box-shadow: 0 1px 0 var(--border), var(--shadow-md); z-index: 20; }
-  header h1 { font-size: 17px; font-weight: 700; white-space: nowrap; letter-spacing: .2px; color: var(--text); }
+           box-shadow: 0 1px 0 rgba(255,255,255,.06), var(--shadow-md); z-index: 20; }
+  header h1 { font-size: 17px; font-weight: 700; white-space: nowrap; letter-spacing: .2px; }
   .brand { display:flex; align-items:center; gap:10px; }
-  .fold-btn { background: #fff; border: 1px solid var(--border-strong); color: var(--text-2);
+  .fold-btn { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color:#c9d6ee;
               padding: 5px 9px; border-radius: 6px; cursor: pointer; font-size: 13px; line-height: 1;
               transition:.15s; white-space:nowrap; }
-  .fold-btn:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
-  .mode-switch { display: flex; gap: 6px; margin: 0 auto; background: var(--panel-soft);
-                 padding: 4px; border-radius: 9px; border: 1px solid var(--border); }
-  .mode-btn { background: transparent; border: none; color: var(--text-2); padding: 7px 16px;
+  .fold-btn:hover { background: rgba(255,255,255,.16); color:#fff; }
+  .mode-switch { display: flex; gap: 6px; margin: 0 auto; background: rgba(255,255,255,.06);
+                 padding: 4px; border-radius: 9px; }
+  .mode-btn { background: transparent; border: none; color: #a9b8d4; padding: 7px 16px;
               border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: .15s; }
-  .mode-btn:hover { color: var(--text); }
+  .mode-btn:hover { color: #fff; }
   .mode-btn.active { background: var(--primary); color: #fff;
-                     box-shadow: 0 2px 8px rgba(37,99,235,.25); }
-  .lang-toggle { background: #fff; border: 1px solid var(--border-strong);
-                 color: var(--text); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
-  .lang-toggle:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
+                     box-shadow: 0 2px 8px rgba(37,99,235,.4); }
+  .lang-toggle { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+                 color: #fff; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .lang-toggle:hover { background: rgba(255,255,255,.16); }
   .panel { background: var(--panel); overflow-y: auto; padding: 14px;
            border-right: 1px solid var(--border);
            transition: padding .25s ease, opacity .25s ease; }
@@ -263,23 +263,6 @@
   .rec-badge.max { background:#fff4e6; color:#d97706; border:1px solid #f3d9b0; }
   .rec-badge.bal { background:#eef4ff; color:#2563eb; border:1px solid #d2defa; }
   td.badge-cell { text-align:left !important; font-weight:500 !important; }
-
-  /* ---------- Batch import modal ---------- */
-  .modal-mask { position:fixed; inset:0; background:rgba(13,27,51,.55); z-index:200;
-                display:flex; align-items:center; justify-content:center; backdrop-filter:blur(2px); }
-  .modal-card { background:var(--panel); border-radius:14px; box-shadow:var(--shadow-lg);
-                width:min(680px, 92vw); padding:20px 22px; max-height:88vh; overflow-y:auto; }
-  .modal-card h3 { font-size:15px; color:var(--header); margin-bottom:8px; font-weight:700; }
-  .modal-card textarea { width:100%; padding:10px; border:1px solid var(--border-strong);
-                         border-radius:8px; font-family:Consolas,Menlo,monospace; font-size:12px;
-                         min-height:180px; resize:vertical; line-height:1.6; box-sizing:border-box; }
-  .modal-card textarea:focus { outline:none; border-color:var(--primary);
-                               box-shadow:0 0 0 3px rgba(37,99,235,.14); }
-  .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
-  .modal-actions .btn { margin-top:0; width:auto; }
-  #batchMsg { min-height:16px; }
-  #batchMsg.ok { color:var(--green); font-weight:600; }
-  #batchMsg.err { color:var(--red); font-weight:600; }
 </style>
 </head>
 <body>
@@ -287,16 +270,15 @@
   <header>
     <div class="brand">
       <img src="assets/logo.png" alt="EGO International Logo" style="height:34px;">
-      <h1 data-i18n="appTitle">智能装箱优化工具</h1>
+      <h1>智能装箱优化工具 / Smart Packing Optimizer</h1>
     </div>
     <div class="mode-switch">
-      <button id="btnModeA" class="mode-btn active" data-i18n="modeA">模式 A：多品混合装柜</button>
-      <button id="btnModeB" class="mode-btn" data-i18n="modeB">模式 B：单品→外箱→托盘</button>
+      <button id="btnModeA" class="mode-btn active">模式 A：多品混合装柜</button>
+      <button id="btnModeB" class="mode-btn">模式 B：单品→外箱→托盘</button>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
-      <button class="fold-btn" onclick="togglePanel('left')" title="折叠/展开左侧配置栏" data-i18n="foldLeft">◧ 配置</button>
-      <button class="fold-btn" onclick="togglePanel('right')" title="折叠/展开右侧看板" data-i18n="foldRight">◨ 看板</button>
-      <button class="lang-toggle" id="unitToggle" onclick="toggleUnit()" title="Metric ↔ Imperial 切换">cm / kg</button>
+      <button class="fold-btn" onclick="togglePanel('left')" title="折叠/展开左侧配置栏">◧ 配置</button>
+      <button class="fold-btn" onclick="togglePanel('right')" title="折叠/展开右侧看板">◨ 看板</button>
       <button class="lang-toggle" onclick="toggleLang()"><span id="langLabel">English</span></button>
     </div>
   </header>
@@ -310,7 +292,7 @@
         <div class="section-title" data-i18n="containerSec">集装箱 / Container</div>
         <label data-i18n="containerType">集装箱类型</label>
         <select id="containerType" onchange="onContainerChange()">
-          <option value="auto" data-i18n="autoOpt">🤖 自动推荐</option>
+          <option value="auto">🤖 自动推荐 / Auto (mix types)</option>
           <option value="20GP">20' GP — 589.8×235.2×239.3 cm</option>
           <option value="40GP">40' GP — 1203.2×235.2×239.3 cm</option>
           <option value="40HQ" selected>40' HQ — 1203.2×235.2×269.8 cm</option>
@@ -329,7 +311,7 @@
         </div>
         <div class="row-2" style="margin-top:6px">
           <div><label data-i18n="margin">装载余量/涨箱 %</label><input type="number" id="loadMargin" min="0" max="5" step="0.1" value="1.5" onfocus="this.select()" title="按比例缩减可用内尺寸；柜门立柱与角件固定 5cm 避让"></div>
-          <div style="font-size:11px;color:#8b95a8;align-self:end" data-i18n="doorNote">柜门/角件固定 5cm 避让</div>
+          <div style="font-size:11px;color:#8b95a8;align-self:end">柜门/角件固定 5cm 避让</div>
         </div>
       </div>
 
@@ -343,7 +325,6 @@
           <button class="add-btn stk" onclick="addProduct('stack')">+ <span data-i18n="addStk">叠装 Stack</span></button>
           <button class="add-btn set" onclick="addProduct('set')">+ <span data-i18n="addSet">套装 Set</span></button>
         </div>
-        <button class="add-btn" style="width:100%;margin-top:6px;border-style:solid;font-weight:600" onclick="openBatchImport()">📋 <span data-i18n="batchImport">批量导入 (Excel 粘贴) / Batch Import</span></button>
       </div>
 
       <button class="btn" onclick="runOptimize()" data-i18n="optimize">计算最优方案 / Optimize</button>
@@ -354,31 +335,28 @@
       <canvas id="canvas"></canvas>
       <div class="viewport-hint" data-i18n="ready">拖动旋转 · 滚轮缩放 · 右键平移</div>
       <div class="vp-views" id="vpViewsA">
-        <button class="vp-btn" data-view="iso" onclick="setView('iso')" data-i18n="viewIso">轴测</button>
-        <button class="vp-btn" data-view="top" onclick="setView('top')" data-i18n="viewTop">顶视</button>
-        <button class="vp-btn" data-view="front" onclick="setView('front')" data-i18n="viewFront">正门</button>
-        <button class="vp-btn" data-view="side" onclick="setView('side')" data-i18n="viewSide">侧视</button>
+        <button class="vp-btn" data-view="iso" onclick="setView('iso')">轴测</button>
+        <button class="vp-btn" data-view="top" onclick="setView('top')">顶视</button>
+        <button class="vp-btn" data-view="front" onclick="setView('front')">正门</button>
+        <button class="vp-btn" data-view="side" onclick="setView('side')">侧视</button>
       </div>
       <div class="vp-toolbar">
-        <button class="vp-btn" onclick="resetView()" data-i18n="resetView">复位视角</button>
-        <button class="vp-btn" onclick="exportPNG()" data-i18n="pngExport">📷 PNG</button>
+        <button class="vp-btn" onclick="resetView()" data-i18n="resetView">复位视角 / Reset</button>
+        <button class="vp-btn" onclick="exportPNG()">📷 PNG</button>
       </div>
       <div class="replay-bar" id="replayBar" style="display:none">
-        <button class="rp-btn" id="rpPlay" onclick="toggleReplay()" data-i18n-title="rpPlay" title="播放/暂停">▶</button>
-        <button class="rp-btn" onclick="replayStep(-1)" data-i18n-title="rpPrev" title="上一排">◀</button>
+        <button class="rp-btn" id="rpPlay" onclick="toggleReplay()" title="播放/暂停">▶</button>
+        <button class="rp-btn" onclick="replayStep(-1)" title="上一排">◀</button>
         <input type="range" id="rpSlider" min="0" max="0" value="0" oninput="replayTo(+this.value)">
-        <button class="rp-btn" onclick="replayStep(1)" data-i18n-title="rpNext" title="下一排">▶</button>
+        <button class="rp-btn" onclick="replayStep(1)" title="下一排">▶</button>
         <span class="rp-info" id="rpInfo">0/0</span>
-        <button class="rp-close" onclick="hideReplay()" data-i18n-title="rpClose" title="收起">✕</button>
+        <button class="rp-close" onclick="hideReplay()" title="收起">✕</button>
       </div>
     </div>
 
     <!-- RIGHT RESULTS -->
     <div class="panel panel-right">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div class="section-title" style="margin-bottom:0;border-bottom:none" data-i18n="resultTitle">装箱方案 / Results</div>
-        <button class="btn btn-sec btn-small" style="margin-top:0" onclick="exportLoadingReport()" title="生成 A4 打印装柜指导单">🖨 <span data-i18n="exportPlan">导出装柜单</span></button>
-      </div>
+      <div class="section-title" style="margin-bottom:12px" data-i18n="resultTitle">装箱方案 / Results</div>
       <div id="kpiA" class="kpi-grid"></div>
       <div id="results">
         <div class="empty-state" data-i18n="noResult">
@@ -393,25 +371,25 @@
   <div id="modeBView" class="mode-view b" style="display:none">
     <!-- LEFT: collapsible config -->
     <div class="panel">
-      <div class="section-title" data-i18n="modeBSub">模式 B · 单品→外箱→托盘三级联动</div>
+      <div class="section-title">模式 B · 单品→外箱→托盘三级联动</div>
 
       <!-- Card 1 -->
       <div class="acc-card">
         <div class="acc-head" id="bAcc1Head">
           <span class="acc-num">1</span>
-          <span class="acc-title" data-i18n="bItemSpec">单品规格</span>
+          <span class="acc-title">单品规格</span>
           <span class="acc-preview" id="bPrev1"></span>
-          <button class="acc-edit" id="bAcc1Edit" data-i18n="collapse">收起</button>
+          <button class="acc-edit" id="bAcc1Edit">收起</button>
         </div>
         <div class="acc-body" id="bAcc1Body">
           <div class="row">
-            <div><label data-i18n="bLen">长 L (mm)</label><input type="number" id="bItemL" value="150" onfocus="this.select()"></div>
-            <div><label data-i18n="bWid">宽 W (mm)</label><input type="number" id="bItemW" value="100" onfocus="this.select()"></div>
-            <div><label data-i18n="bHei">高 H (mm)</label><input type="number" id="bItemH" value="80" onfocus="this.select()"></div>
+            <div><label>长 L (mm)</label><input type="number" id="bItemL" value="150" onfocus="this.select()"></div>
+            <div><label>宽 W (mm)</label><input type="number" id="bItemW" value="100" onfocus="this.select()"></div>
+            <div><label>高 H (mm)</label><input type="number" id="bItemH" value="80" onfocus="this.select()"></div>
           </div>
           <div class="row-2" style="margin-top:6px">
-            <div><label data-i18n="bItemWt">单品毛重 (g)</label><input type="number" id="bItemWeight" value="200" onfocus="this.select()"></div>
-            <div><label data-i18n="bTarget">目标装箱 PCS</label><input type="number" id="bTargetQty" value="24" onfocus="this.select()"></div>
+            <div><label>单品毛重 (g)</label><input type="number" id="bItemWeight" value="200" onfocus="this.select()"></div>
+            <div><label>目标装箱 PCS</label><input type="number" id="bTargetQty" value="24" onfocus="this.select()"></div>
           </div>
         </div>
       </div>
@@ -420,22 +398,22 @@
       <div class="acc-card">
         <div class="acc-head" id="bAcc2Head">
           <span class="acc-num">2</span>
-          <span class="acc-title" data-i18n="bCartonLimit">外箱与限重</span>
+          <span class="acc-title">外箱与限重</span>
           <span class="acc-preview" id="bPrev2"></span>
-          <button class="acc-edit" id="bAcc2Edit" data-i18n="collapse">收起</button>
+          <button class="acc-edit" id="bAcc2Edit">收起</button>
         </div>
         <div class="acc-body" id="bAcc2Body">
           <div class="row-2">
-            <div><label data-i18n="bWall">纸板厚度 (mm)</label><input type="number" id="bWall" value="5" onfocus="this.select()"></div>
-            <div><label data-i18n="bMaxLoad">单箱限重 (kg)</label><input type="number" id="bMaxLoad" value="15" onfocus="this.select()"></div>
+            <div><label>纸板厚度 (mm)</label><input type="number" id="bWall" value="5" onfocus="this.select()"></div>
+            <div><label>单箱限重 (kg)</label><input type="number" id="bMaxLoad" value="15" onfocus="this.select()"></div>
           </div>
           <div class="row-2">
-            <div><label data-i18n="bOverhang">边缘溢出 Overhang (mm)</label><input type="number" id="bOverhang" min="0" max="20" step="1" value="0" onfocus="this.select()" title="允许纸箱托盘边缘溢出 0~20mm"></div>
-            <div><label data-i18n="bMaxStack">最大堆码层数</label><input type="number" id="bCartonMaxStack" min="1" step="1" placeholder="∞" onfocus="this.select()" title="单箱抗压最大堆码层数"></div>
+            <div><label>边缘溢出 Overhang (mm)</label><input type="number" id="bOverhang" min="0" max="20" step="1" value="0" onfocus="this.select()" title="允许纸箱托盘边缘溢出 0~20mm"></div>
+            <div><label>最大堆码层数</label><input type="number" id="bCartonMaxStack" min="1" step="1" placeholder="∞" onfocus="this.select()" title="单箱抗压最大堆码层数"></div>
           </div>
-          <label class="check-row"><input type="checkbox" id="bAllowSide"> <span data-i18n="bAllowSide">允许侧放 (Side Loading)</span></label>
-          <label class="check-row"><input type="checkbox" id="bAllowInvert"> <span data-i18n="bAllowInvert">允许整体倒置 (Full Inversion)</span></label>
-          <div class="hint" data-i18n="bCartonHint">单箱毛重 = 单品净重 + 500g 箱重；超限组合自动剔除。边缘溢出与堆码层数影响打托排布与双层堆叠。</div>
+          <label class="check-row"><input type="checkbox" id="bAllowSide"> 允许侧放 (Side Loading)</label>
+          <label class="check-row"><input type="checkbox" id="bAllowInvert"> 允许整体倒置 (Full Inversion)</label>
+          <div class="hint">单箱毛重 = 单品净重 + 500g 箱重；超限组合自动剔除。边缘溢出与堆码层数影响打托排布与双层堆叠。</div>
         </div>
       </div>
 
@@ -443,12 +421,12 @@
       <div class="acc-card">
         <div class="acc-head" id="bAcc3Head">
           <span class="acc-num">3</span>
-          <span class="acc-title" data-i18n="bLogistics">物流载具</span>
+          <span class="acc-title">物流载具</span>
           <span class="acc-preview" id="bPrev3"></span>
-          <button class="acc-edit" id="bAcc3Edit" data-i18n="collapse">收起</button>
+          <button class="acc-edit" id="bAcc3Edit">收起</button>
         </div>
         <div class="acc-body" id="bAcc3Body">
-          <label data-i18n="bPallet">国际托盘</label>
+          <label>国际托盘</label>
           <select id="bPalletType">
             <option value="US">US GMA — 1219×1016 mm</option>
             <option value="UK">UK Standard — 1200×1000 mm</option>
@@ -456,13 +434,13 @@
             <option value="AU">Australia — 1165×1165 mm</option>
             <option value="JP">Japan T11 — 1100×1100 mm</option>
           </select>
-          <label style="margin-top:8px" data-i18n="bContainer">目标集装箱</label>
+          <label style="margin-top:8px">目标集装箱</label>
           <select id="bContainerType">
             <option value="40HQ" selected>40' HQ — 12032×2352×2698 mm</option>
             <option value="40GP">40' GP — 12032×2352×2393 mm</option>
             <option value="20GP">20' GP — 5898×2352×2393 mm</option>
           </select>
-          <label style="margin-top:8px" data-i18n="bPattern">打托堆叠模式</label>
+          <label style="margin-top:8px">打托堆叠模式</label>
           <select id="bPattern">
             <option value="auto" selected>自动择优 (Auto)</option>
             <option value="column">列阵 Column (0°/90°)</option>
@@ -472,50 +450,50 @@
         </div>
       </div>
 
-      <button class="btn" id="bOptimize" data-i18n="bOptimize">计算模式B方案</button>
-      <div class="b-note" data-i18n="bNote">默认三项展开；可点"收起"收拢栏目，或点"计算模式B方案"生成联动结果。</div>
+      <button class="btn" id="bOptimize">计算模式B方案 / Optimize Stage B</button>
+      <div class="b-note">默认三项展开；可点"收起"收拢栏目，或点"计算模式B方案"生成联动结果。</div>
     </div>
 
     <!-- CENTER: dual 3D -->
     <div id="modeBViewport">
       <div class="vp-box">
         <canvas id="carton3dCanvas"></canvas>
-        <div class="vp-title" data-i18n="bCartonTitle">外箱拼箱透视</div>
+        <div class="vp-title">外箱拼箱透视 / Carton Stuffing</div>
         <div class="vp-views">
-          <button class="vp-btn" data-bview="carton" data-view="iso" onclick="setViewB('carton','iso')" data-i18n="viewIso">轴测</button>
-          <button class="vp-btn" data-bview="carton" data-view="top" onclick="setViewB('carton','top')" data-i18n="viewTop">顶视</button>
-          <button class="vp-btn" data-bview="carton" data-view="front" onclick="setViewB('carton','front')" data-i18n="viewFront">正门</button>
-          <button class="vp-btn" data-bview="carton" data-view="side" onclick="setViewB('carton','side')" data-i18n="viewSide">侧视</button>
+          <button class="vp-btn" data-bview="carton" data-view="iso" onclick="setViewB('carton','iso')">轴测</button>
+          <button class="vp-btn" data-bview="carton" data-view="top" onclick="setViewB('carton','top')">顶视</button>
+          <button class="vp-btn" data-bview="carton" data-view="front" onclick="setViewB('carton','front')">正门</button>
+          <button class="vp-btn" data-bview="carton" data-view="side" onclick="setViewB('carton','side')">侧视</button>
         </div>
         <div class="vp-toolbar">
-          <button class="vp-btn" id="bCartonReset" title="复位视角" data-i18n="reset">复位</button>
-          <button class="vp-btn" id="bCartonPng" title="下载 PNG" data-i18n="pngExport">📷 PNG</button>
+          <button class="vp-btn" id="bCartonReset" title="复位视角">复位</button>
+          <button class="vp-btn" id="bCartonPng" title="下载 PNG">📷 PNG</button>
         </div>
       </div>
       <div class="vp-box">
         <canvas id="pallet3dCanvas"></canvas>
-        <div class="vp-title" data-i18n="bPalletTitle">托盘打托堆叠</div>
+        <div class="vp-title">托盘打托堆叠 / Pallet Stacking</div>
         <div class="vp-views">
-          <button class="vp-btn" data-bview="pallet" data-view="iso" onclick="setViewB('pallet','iso')" data-i18n="viewIso">轴测</button>
-          <button class="vp-btn" data-bview="pallet" data-view="top" onclick="setViewB('pallet','top')" data-i18n="viewTop">顶视</button>
-          <button class="vp-btn" data-bview="pallet" data-view="front" onclick="setViewB('pallet','front')" data-i18n="viewFront">正门</button>
-          <button class="vp-btn" data-bview="pallet" data-view="side" onclick="setViewB('pallet','side')" data-i18n="viewSide">侧视</button>
+          <button class="vp-btn" data-bview="pallet" data-view="iso" onclick="setViewB('pallet','iso')">轴测</button>
+          <button class="vp-btn" data-bview="pallet" data-view="top" onclick="setViewB('pallet','top')">顶视</button>
+          <button class="vp-btn" data-bview="pallet" data-view="front" onclick="setViewB('pallet','front')">正门</button>
+          <button class="vp-btn" data-bview="pallet" data-view="side" onclick="setViewB('pallet','side')">侧视</button>
         </div>
         <div class="vp-toolbar">
-          <button class="vp-btn" id="bPalletReset" title="复位视角" data-i18n="reset">复位</button>
-          <button class="vp-btn" id="bPalletPng" title="下载 PNG" data-i18n="pngExport">📷 PNG</button>
+          <button class="vp-btn" id="bPalletReset" title="复位视角">复位</button>
+          <button class="vp-btn" id="bPalletPng" title="下载 PNG">📷 PNG</button>
         </div>
       </div>
     </div>
 
     <!-- RIGHT: results + Top 10 -->
     <div class="panel panel-right">
-      <div class="section-title" style="margin-bottom:12px" data-i18n="bResultsTitle">模式B方案</div>
+      <div class="section-title" style="margin-bottom:12px">模式B方案 / Stage B Results</div>
       <div id="kpiB" class="kpi-grid"></div>
       <div id="bSummary">
-        <div class="empty-state" data-i18n="bEmpty">点击"计算模式B方案"生成联动结果</div>
+        <div class="empty-state">点击"计算模式B方案"生成联动结果</div>
       </div>
-      <div class="section-title" style="margin:14px 0 6px" data-i18n="bTop10Title">候选方案 Top 10</div>
+      <div class="section-title" style="margin:14px 0 6px">候选方案 Top 10</div>
       <div id="bTop10">
         <div class="empty-state">—</div>
       </div>
@@ -527,23 +505,5 @@
 <script src="app.js"></script>
 <script src="pallet-optimizer.js"></script>
 <div id="tooltip"></div>
-
-<!-- Batch import modal -->
-<div id="batchModal" class="modal-mask" style="display:none">
-  <div class="modal-card">
-    <h3>📋 <span data-i18n="batchImportTitle">批量导入外箱 / Batch Import</span></h3>
-    <div class="hint" data-i18n-html="batchImportHint">
-      从 Excel 选中单元格区域直接 Ctrl+C 复制，粘贴到下面文本框（每行一个外箱）。<br>
-      列顺序：<b>品名 · 长 · 宽 · 高 · 数量 · 重量</b>（品名放最后也可自动识别；品名可留空）。<br>
-      支持 Tab / 逗号 / 多空格分隔。尺寸按当前单位（cm 或 inch）解析。
-    </div>
-    <textarea id="batchText" rows="10" style="margin-top:10px" placeholder="纸箱A&#9;60&#9;40&#9;30&#9;500&#9;12&#10;55&#9;35&#9;25&#9;200&#9;8&#9;纸箱B&#10;Carton C, 45, 30, 25, 300, 10"></textarea>
-    <div id="batchMsg" class="hint"></div>
-    <div class="modal-actions">
-      <button class="btn btn-sec btn-small" onclick="closeBatchImport()" data-i18n="cancel">取消 / Cancel</button>
-      <button class="btn btn-small" onclick="doBatchImport()" data-i18n="parseImport">解析并导入 / Parse &amp; Import</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
