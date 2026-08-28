@@ -53,10 +53,12 @@
   .lang-toggle { background: #fff; border: 1px solid var(--border-strong);
                  color: var(--text); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
   .lang-toggle:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
-  .panel { background: var(--panel); overflow-y: auto; padding: 14px;
+  .panel { background: var(--panel); overflow-y: auto; padding: 14px; min-width: 0;
            border-right: 1px solid var(--border);
            transition: padding .25s ease, opacity .25s ease; }
-  .panel.collapsed, .panel-right.collapsed { padding: 0; border: none; opacity: 0; overflow: hidden; }
+  /* 折叠时彻底收起：grid 轨道为 0 需配合 min-width:0 才能不被内容撑开 */
+  .mode-view.collapsed-left .panel,
+  .mode-view.collapsed-right .panel-right { width: 0; min-width: 0; padding: 0; border: none; opacity: 0; overflow: hidden; }
   .panel-right { border-right: none; border-left: 1px solid var(--border); }
   .section { margin-bottom: 16px; background: var(--panel-soft); border: 1px solid var(--border);
              border-radius: var(--radius); padding: 12px 12px 10px; box-shadow: var(--shadow-sm); }
