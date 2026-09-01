@@ -59,6 +59,10 @@
   .panel { background: var(--panel); overflow-y: auto; padding: 14px; min-width: 0;
            border-right: 1px solid var(--border);
            transition: padding .25s ease, opacity .25s ease; }
+  /* 防止中间 3D 视口内容(canvas)把 1fr 轨道撑爆，导致右栏被挤出屏幕（"看板回不来"） */
+  .mode-view > * { min-width: 0; }
+  .mode-view > #viewport { min-width: 0; }
+  .mode-view > #viewport canvas { max-width: 100%; display: block; }
   /* 折叠时彻底收起：grid 轨道为 0 需配合 min-width:0 才能不被内容撑开 */
   .mode-view.collapsed-left .panel:not(.panel-right),
   .mode-view.collapsed-right .panel-right { width: 0; min-width: 0; padding: 0; border: none; opacity: 0; overflow: hidden; }
@@ -303,7 +307,7 @@
       <button class="fold-btn" onclick="togglePanel('right')" title="折叠/展开右侧看板" data-i18n="foldRight">◨ 看板</button>
       <button class="lang-toggle" id="unitToggle" onclick="toggleUnit()" title="Metric ↔ Imperial 切换">cm / kg</button>
       <button class="lang-toggle" onclick="toggleLang()"><span id="langLabel">English</span></button>
-      <span id="verBadge" style="font-size:11px;color:var(--text-2);background:var(--panel-soft);border:1px solid var(--border);border-radius:5px;padding:3px 6px;line-height:1;white-space:nowrap">v4</span>
+      <span id="verBadge" style="font-size:11px;color:var(--text-2);background:var(--panel-soft);border:1px solid var(--border);border-radius:5px;padding:3px 6px;line-height:1;white-space:nowrap">v5</span>
     </div>
   </header>
 
@@ -529,9 +533,9 @@
   </div>
 </div>
 
-<script src="lib-loader.js?v=4"></script>
-<script src="app.js?v=4"></script>
-<script src="pallet-optimizer.js?v=4"></script>
+<script src="lib-loader.js?v=5"></script>
+<script src="app.js?v=5"></script>
+<script src="pallet-optimizer.js?v=5"></script>
 <div id="tooltip"></div>
 
 <!-- Batch import modal -->

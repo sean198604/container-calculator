@@ -2027,8 +2027,12 @@ function exportPNG(){
 // classList.toggle(第二参数) 兼容性差异导致状态错乱）；显隐一律用内联样式
 // 强控并显式覆盖所有折叠属性，任何旧缓存 CSS 都无法再"误伤"面板。
 const __panelState = { left: false, right: false };
+const __panelClicks = { left: 0, right: 0 };
 function togglePanel(side){
   __panelState[side] = !__panelState[side];
+  __panelClicks[side]++;
+  const badge = document.getElementById('verBadge');
+  if (badge) badge.textContent = 'v5 · R' + __panelClicks.right + ' L' + __panelClicks.left;
   const L = __panelState.left, R = __panelState.right;
   document.querySelectorAll('.mode-view').forEach(v => {
     // 同步 class（供其它逻辑使用），但不再作为显隐状态源
@@ -2038,9 +2042,9 @@ function togglePanel(side){
   });
   window.dispatchEvent(new Event('resize'));
 }
-// 折叠/展开的"内联强控"：直接写 grid 轨道 + 面板所有显隐属性，
-// 不依赖 CSS class 折叠规则 —— 即使旧版本 HTML 的误伤 CSS 被缓存，
-// 内联样式优先级最高，也能强制正确显隐，杜绝"展开回不来"。
+// 折叠/展开的"内联三重强控"：display + grid 轨道 + 全属性覆盖。
+// 不依赖 CSS class 折叠规则 —— 即使旧版本 HTML 的误伤 CSS 被缓存、
+// 即使内核不支持某些新特性，display:none/'' 也是最基础的显隐手段，物理上不可能失败。
 function applyPanelState(v){
   if(!v) return;
   const isB = v.classList.contains('b');
@@ -2048,21 +2052,30 @@ function applyPanelState(v){
   const rightHidden = __panelState.right;
   const L = (isB ? 396 : 372) * (leftHidden  ? 0 : 1);
   const R = (isB ? 430 : 348) * (rightHidden ? 0 : 1);
-  // grid 轨道最先强制写入（内联优先级最高，覆盖任何旧缓存 CSS）
+  // 1) grid 轨道强制写入（内联优先级最高，覆盖任何旧缓存 CSS）
   v.style.gridTemplateColumns = L + 'px 1fr ' + R + 'px';
-  // 面板显隐：用 children 遍历代替 :scope 选择器（兼容性最稳，绝不抛错）
+  // 2) 面板 display + 全属性显隐强控（children 遍历，兼容性最稳）
   const kids = v.children;
   for (let i = 0; i < kids.length; i++) {
     const el = kids[i];
-    if (!el || !el.classList || !el.classList.contains('panel')) continue;
+    if (!el) continue;
+    // 显式固定列位置：display:none 的 item 不参与 grid 布局，若无显式列号，
+    // 后续 item 会前移占位（左栏折叠时右栏被挤到 1fr、3D 区被挤到 0px）。
+    el.style.gridColumn = String(i + 1);
+    // 关键：min-width:0 防止 canvas 等子内容把 1fr 轨道撑爆
+    //（#viewport 无 min-width:0 时，canvas 固定宽会把中间轨道撑大，
+    //   右栏被挤出屏幕，表现为"看板展开后回不来"）
+    el.style.minWidth = '0';
+    if (!el.classList || !el.classList.contains('panel')) continue;
     const isRight = el.classList.contains('panel-right');
     const hide = isRight ? rightHidden : leftHidden;
     if (hide) {
+      el.style.display = 'none';
       el.style.width = '0px'; el.style.minWidth = '0px';
       el.style.padding = '0px'; el.style.border = 'none';
       el.style.opacity = '0'; el.style.overflow = 'hidden';
     } else {
-      // 展开：显式覆盖一切可能残留的折叠内联/旧CSS属性，恢复面板默认
+      el.style.display = '';
       el.style.width = 'auto'; el.style.minWidth = '0';
       el.style.padding = '14px'; el.style.border = 'none';
       if (isRight) el.style.borderLeft = '1px solid var(--border)';
