@@ -2354,7 +2354,8 @@ ${cog&&!cog.hasWeight?`<div class="note">${zh?'注：未录入单箱重量，重
 function bootApp() {
   refreshProducts();
   applyI18n();
-  initThree();
+  // 3D 初始化可能因引擎缺失而失败，隔离异常以免阻断后续 UI 初始化
+  try { initThree(); } catch (e) { console.error('[3D] init failed, rest of UI still works:', e); }
   onContainerChange();
   // Debug hook: #autob → auto-switch to Mode B + compute (production harmless)
   // #autob-top / #autob-front / #autob-side → also demo that view button
@@ -2372,6 +2373,14 @@ function bootApp() {
   }
 }
 document.addEventListener('DOMContentLoaded', () => {
-  if (window.THREE) bootApp();
-  else window.addEventListener('three-ready', bootApp, { once: true });
+  // 必须等 THREE 与 OrbitControls 二者都就绪，否则 new THREE.OrbitControls 会抛
+  // "not a constructor"，导致 initThree 中断、3D 画布黑屏（初始化竞态，时好时坏）。
+  if (window.THREE && window.THREE.OrbitControls) { bootApp(); return; }
+  const start = () => bootApp();
+  if (window.__threeReady && typeof window.__threeReady.then === 'function') {
+    window.__threeReady.then(start).catch(start); // 成功或失败都确保 UI 启动
+  } else {
+    window.addEventListener('three-ready', start, { once: true });
+    window.addEventListener('three-failed', start, { once: true });
+  }
 });
