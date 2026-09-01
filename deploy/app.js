@@ -2024,14 +2024,43 @@ function exportPNG(){
 // SIDE PANEL COLLAPSE
 // =====================================================================
 function togglePanel(side){
-  const mv = document.querySelectorAll('.mode-view');
+  const vs = document.querySelectorAll('.mode-view');
   const wantCollapse = !document.getElementById('modeAView').classList.contains('collapsed-'+side);
-  mv.forEach(v=>v.classList.toggle('collapsed-'+side, wantCollapse));
-  const left = document.querySelector('.mode-view > .panel:not(.panel-right)');
-  const right = document.querySelector('.mode-view > .panel-right');
-  if(side==='left' && left) left.classList.toggle('collapsed', wantCollapse);
-  if(side==='right' && right) right.classList.toggle('collapsed', wantCollapse);
+  vs.forEach(v=>{
+    v.classList.toggle('collapsed-'+side, wantCollapse);
+    applyPanelState(v);
+  });
   window.dispatchEvent(new Event('resize'));
+}
+// 折叠/展开的"内联强控"：直接写 grid 轨道 + 面板 width/opacity，
+// 不依赖 CSS class 折叠规则 —— 即使旧版本 HTML 的误伤 CSS 被缓存，
+// 内联样式优先级最高，也能强制正确显隐，杜绝"展开回不来"。
+function applyPanelState(v){
+  if(!v) return;
+  const isB = v.classList.contains('b');
+  let L = isB ? 396 : 372;
+  let R = isB ? 430 : 348;
+  const leftHidden  = v.classList.contains('collapsed-left');
+  const rightHidden = v.classList.contains('collapsed-right');
+  if(leftHidden)  L = 0;
+  if(rightHidden) R = 0;
+  // grid 轨道最先强制写入（内联优先级最高，覆盖任何旧缓存 CSS）
+  // 注意：L/R 是数字，必须显式拼接 px 单位，否则 '372 1fr 348px' 无单位是无效值会被浏览器丢弃
+  v.style.gridTemplateColumns = L + 'px 1fr ' + R + 'px';
+  // 面板显隐：用 children 遍历代替 :scope 选择器（兼容性最稳，绝不抛错）
+  const kids = v.children;
+  for (let i = 0; i < kids.length; i++) {
+    const el = kids[i];
+    if (!el || !el.classList || !el.classList.contains('panel')) continue;
+    const isRight = el.classList.contains('panel-right');
+    if (isRight) {
+      el.style.width = rightHidden ? '0px' : 'auto';
+      el.style.opacity = rightHidden ? '0' : '';
+    } else {
+      el.style.width = leftHidden ? '0px' : 'auto';
+      el.style.opacity = leftHidden ? '0' : '';
+    }
+  }
 }
 
 // =====================================================================
@@ -2373,6 +2402,8 @@ function bootApp() {
   }
 }
 document.addEventListener('DOMContentLoaded', () => {
+  // 面板折叠状态内联强控：DOM 就绪即同步，不依赖 3D 加载
+  try { document.querySelectorAll('.mode-view').forEach(v=>applyPanelState(v)); } catch(e){}
   // 必须等 THREE 与 OrbitControls 二者都就绪，否则 new THREE.OrbitControls 会抛
   // "not a constructor"，导致 initThree 中断、3D 画布黑屏（初始化竞态，时好时坏）。
   if (window.THREE && window.THREE.OrbitControls) { bootApp(); return; }
