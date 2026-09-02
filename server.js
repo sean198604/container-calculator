@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 7002;
@@ -16,9 +17,12 @@ app.use(express.static(path.join(__dirname), { index: false, maxAge: 0, setHeade
 
 // 默认页面（品牌双轨：内网 7002 设 EGO_BRAND=true 返回 EGO 版 ego-index.html；
 // GitHub 公开部署无此环境变量，默认返回 SEAN 版 index.html）
+// 容错：ego-index.html 已被剔除出公开仓库（仅本地保留），EGO_BRAND=true 但文件缺失时
+// 自动回退 index.html，保证 clone 公开仓库后 docker-compose up 即可用（SEAN 版），不会 404。
 app.get('/', (req, res) => {
   noCache(res);
-  const entry = process.env.EGO_BRAND === 'true' ? 'ego-index.html' : 'index.html';
+  let entry = process.env.EGO_BRAND === 'true' ? 'ego-index.html' : 'index.html';
+  if (!fs.existsSync(path.join(__dirname, entry))) entry = 'index.html';
   res.sendFile(path.join(__dirname, entry));
 });
 
