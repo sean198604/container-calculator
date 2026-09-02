@@ -14,12 +14,15 @@
 - **Three.js 本地化**：`vendor/three.min.js`（r128）+ `vendor/OrbitControls.js`（r128）已落入项目，`lib-loader.js` 加载顺序为「本地 vendor → 公共 CDN 兜底」，断外网也能跑。
 
 ### 关键约定（务必遵守）
-- **Logo 双轨（2026-09-02 起改为环境变量驱动）**：
-  - 内网 7002：`docker-compose.yml` 设 `EGO_BRAND=true`，`server.js` 返回 `ego-index.html` → **EGO International** logo（`assets/logo.png`）。`ego-index.html` 与 `assets/logo.png` **已被 .gitignore 忽略、git rm --cached，仅本地保留**（供 Docker `COPY . .` 构建），不推送 GitHub。
-  - 公开部署（GitHub / InfinityFree）：`server.js` 无 `EGO_BRAND` 时返回 `index.html` → **SEAN** logo（`assets/logo.jpg`）；静态托管上传 `deploy/` 目录。
-  - `server.js` 的 `express.static` 必须保持 `{ index: false }`，否则 `/` 会被 static 默认 index.html 短路，EGO_BRAND 分发失效。
+- **Logo 双轨（2026-09-02 两度升级，终版为「单一 index.html + 后端动态注入」，无第二份 HTML）**：
+  - **EGO 激活条件**：`EGO_BRAND=true` **且** `assets/logo.png` 存在（EGO logo 被 .gitignore 忽略、不进公开仓库，由内网部署方放入 `assets/` 即可）。
+  - 激活时 `server.js` 读 `index.html`，把 `assets/logo.jpg` / `alt="SEAN Logo"` 动态替换为 `assets/logo.png` / `alt="EGO International Logo"`（favicon + header 同时切换）后返回。
+  - 默认或 `logo.png` 缺失 → 原样返回 `index.html`（SEAN）。公开仓库 clone 后 `docker-compose up` 开箱即用；**静态托管（无 Node）也不受影响**——`index.html` 文件本身始终是 SEAN 引用。
+  - 内网 7002：`docker-compose.yml` 设 `EGO_BRAND=true`，本地 `assets/logo.png` 随 `COPY . .` 进镜像 → 自动 EGO。
+  - `server.js` 的 `express.static` 必须保持 `{ index: false }`，否则 `/` 会被 static 默认 index.html 短路，动态注入失效。
   - `deploy/assets/logo.jpg` 绝不能覆盖成 `logo.png`；GitHub 公开仓库不得出现任何 EGO 品牌文件。
-- 两个分支页面 `index.html`（SEAN）与 `ego-index.html`（EGO，仅本地）内容一致（除 logo），脚本引用必须为 `<script src="app.js">` + `<script src="pallet-optimizer.js">`（不能用 `ego-app.js` 之类旧名）。
+  - 已废弃：`ego-index.html`（历史方案的双 HTML，2026-09-02 删除，勿再引入）。
+- 唯一主页面 `index.html`（SEAN 静态引用为默认），脚本引用必须为 `<script src="app.js">` + `<script src="pallet-optimizer.js">`（不能用 `ego-app.js` 之类旧名）。
 
 ---
 
@@ -27,8 +30,7 @@
 
 | 文件 | 作用 |
 |------|------|
-| `index.html` | 主页面（Mode A + Mode B 双模式 Tab），SEAN 版，GitHub 默认入口。 |
-| `ego-index.html` | 主页面 EGO 版，**仅本地保留**（git rm --cached + .gitignore），由 `EGO_BRAND=true` 触发，供 7002 内网 Docker 构建。 |
+| `index.html` | 主页面（Mode A + Mode B 双模式 Tab）。SEAN 静态引用为默认；EGO 版由 server.js 按 `EGO_BRAND=true` + `assets/logo.png` 存在时动态注入 logo，**无第二份 HTML**。 |
 | `app.js` | **Mode A** 逻辑：集装箱装箱（多 SKU 人工装柜）+ 3D 渲染 + 步骤指令生成 + 评分。 |
 | `pallet-optimizer.js` | **Mode B** 逻辑：单品→外箱→托盘三级优化 + 双视口 3D。封装为 `window.PalletOptimizer`，对 Mode A **零侵入**。 |
 | `lib-loader.js` | Three.js 多级回退加载器（本地优先）。 |
@@ -188,9 +190,9 @@ if (totalWeight > container.maxPayload) return null   // 港口限重剪枝
 1. **Three.js 必须本地化**：曾因依赖 Cloudflare/jsDelivr CDN，国内网络下 A、B 3D 同时失效。现 `vendor/` 已落地，`lib-loader.js` 本地优先。
 2. **Mode B 渲染循环**：不能用一次性 `loopStarted` 标志，否则切回 B 时 `animateB` 不再启动导致「看起来卡死」。已改为 `rafId` 守卫。
 3. **HTML 脚本标签铁律**：底部必须 `<script src="app.js">` + `<script src="pallet-optimizer.js">`，不能用 `ego-app.js`。
-4. **Logo 双轨**：见 §0 约定。内网 EGO 由 `EGO_BRAND=true` 触发（`ego-index.html` 仅本地保留）；公开 SEAN 是默认 `index.html`。改前确认当前是「内网 EGO」还是「公开 SEAN」。
+4. **Logo 双轨**：见 §0 约定。EGO 由 `EGO_BRAND=true` + `assets/logo.png` 存在共同触发（server.js 动态注入 logo，无第二 HTML）；公开 SEAN 是默认。改前确认当前是「内网 EGO」还是「公开 SEAN」。
 5. **尺寸单位**：Mode A 用 cm / kg；Mode B 用 **mm** / g（在 Stage1 转 kg）。两套坐标系独立，勿混。
-6. **部署同步**：改 `index.html` / `ego-index.html` / `pallet-optimizer.js` / `app.js` 后，记得同步 `deploy/`；容器改动需 `docker-compose up -d --build` 固化。
+6. **部署同步**：改 `index.html` / `pallet-optimizer.js` / `app.js` 后，记得同步 `deploy/`；容器改动需 `docker-compose up -d --build` 固化。
 
 ---
 
