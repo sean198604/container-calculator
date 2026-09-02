@@ -7,6 +7,9 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+      # 内网 7002 使用 EGO International 品牌（EGO_BRAND=true → ego-index.html）
+      # GitHub 公开部署（无此变量）默认 SEAN 版 index.html
+      - EGO_BRAND=true
     networks:
       - container-calculator_default
 
