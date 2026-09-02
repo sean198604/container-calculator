@@ -7,6 +7,5 @@ build/
 .DS_Store
 Thumbs.db
 .workbuddy/
-# 内网 7002 专用 EGO 品牌文件（git rm --cached 保留本地供 Docker 构建，不推送 GitHub 公开仓库）
-ego-index.html
+# 内网 EGO 品牌 logo（EGO_BRAND=true 时 server.js 动态注入；不进公开仓库，由内网部署方放入 assets/）
 assets/logo.png

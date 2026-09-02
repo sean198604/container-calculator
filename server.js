@@ -15,15 +15,25 @@ function noCache(res) {
 // index:false —— 禁用 static 对 "/" 的默认 index.html 响应，让 app.get('/') 按 EGO_BRAND 品牌双轨分发
 app.use(express.static(path.join(__dirname), { index: false, maxAge: 0, setHeaders: noCache }));
 
-// 默认页面（品牌双轨：内网 7002 设 EGO_BRAND=true 返回 EGO 版 ego-index.html；
-// GitHub 公开部署无此环境变量，默认返回 SEAN 版 index.html）
-// 容错：ego-index.html 已被剔除出公开仓库（仅本地保留），EGO_BRAND=true 但文件缺失时
-// 自动回退 index.html，保证 clone 公开仓库后 docker-compose up 即可用（SEAN 版），不会 404。
+// 品牌双轨——单一 index.html + 后端动态注入 logo（无第二份 HTML）：
+// - EGO 激活条件：EGO_BRAND=true 且 assets/logo.png 存在（EGO logo 不进公开仓库，由内网部署方放入）
+// - 激活时把 index.html(SEAN) 中 logo.jpg / SEAN Logo 动态替换为 logo.png / EGO International Logo
+// - 未激活或文件缺失 → 原样返回 index.html(SEAN)：公开仓库 clone 后 docker-compose up 即用；静态托管不受影响
+const INDEX_FILE = path.join(__dirname, 'index.html');
+const EGO_LOGO_FILE = path.join(__dirname, 'assets', 'logo.png');
+
+function isEgoActive() {
+  return process.env.EGO_BRAND === 'true' && fs.existsSync(EGO_LOGO_FILE);
+}
+
 app.get('/', (req, res) => {
   noCache(res);
-  let entry = process.env.EGO_BRAND === 'true' ? 'ego-index.html' : 'index.html';
-  if (!fs.existsSync(path.join(__dirname, entry))) entry = 'index.html';
-  res.sendFile(path.join(__dirname, entry));
+  let html = fs.readFileSync(INDEX_FILE, 'utf8');
+  if (isEgoActive()) {
+    html = html.split('assets/logo.jpg').join('assets/logo.png')
+               .split('alt="SEAN Logo"').join('alt="EGO International Logo"');
+  }
+  res.type('html').send(html);
 });
 
 // 健康检查
