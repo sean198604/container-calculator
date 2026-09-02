@@ -14,11 +14,12 @@
 - **Three.js 本地化**：`vendor/three.min.js`（r128）+ `vendor/OrbitControls.js`（r128）已落入项目，`lib-loader.js` 加载顺序为「本地 vendor → 公共 CDN 兜底」，断外网也能跑。
 
 ### 关键约定（务必遵守）
-- **Logo 双轨**：
-  - 7002 公司项目（`index.html` / `ego-index.html`）：header 与 favicon 用 **EGO International** logo → `assets/logo.png`。
-  - `deploy/`（GitHub / InfinityFree）：用 **SEAN** logo → `assets/logo.jpg`。
-  - 改动两个 HTML 后务必同步 `deploy/` 目录，且 `deploy/assets/logo.jpg` 绝不能覆盖成 `logo.png`。
-- 两个分支页面 `index.html` 与 `ego-index.html` 内容一致，脚本引用必须为 `<script src="app.js">` + `<script src="pallet-optimizer.js">`（不能用 `ego-app.js` 之类旧名）。
+- **Logo 双轨（2026-09-02 起改为环境变量驱动）**：
+  - 内网 7002：`docker-compose.yml` 设 `EGO_BRAND=true`，`server.js` 返回 `ego-index.html` → **EGO International** logo（`assets/logo.png`）。`ego-index.html` 与 `assets/logo.png` **已被 .gitignore 忽略、git rm --cached，仅本地保留**（供 Docker `COPY . .` 构建），不推送 GitHub。
+  - 公开部署（GitHub / InfinityFree）：`server.js` 无 `EGO_BRAND` 时返回 `index.html` → **SEAN** logo（`assets/logo.jpg`）；静态托管上传 `deploy/` 目录。
+  - `server.js` 的 `express.static` 必须保持 `{ index: false }`，否则 `/` 会被 static 默认 index.html 短路，EGO_BRAND 分发失效。
+  - `deploy/assets/logo.jpg` 绝不能覆盖成 `logo.png`；GitHub 公开仓库不得出现任何 EGO 品牌文件。
+- 两个分支页面 `index.html`（SEAN）与 `ego-index.html`（EGO，仅本地）内容一致（除 logo），脚本引用必须为 `<script src="app.js">` + `<script src="pallet-optimizer.js">`（不能用 `ego-app.js` 之类旧名）。
 
 ---
 
@@ -26,7 +27,8 @@
 
 | 文件 | 作用 |
 |------|------|
-| `index.html` / `ego-index.html` | 主页面（Mode A + Mode B 双模式 Tab）。两文件内容同步。 |
+| `index.html` | 主页面（Mode A + Mode B 双模式 Tab），SEAN 版，GitHub 默认入口。 |
+| `ego-index.html` | 主页面 EGO 版，**仅本地保留**（git rm --cached + .gitignore），由 `EGO_BRAND=true` 触发，供 7002 内网 Docker 构建。 |
 | `app.js` | **Mode A** 逻辑：集装箱装箱（多 SKU 人工装柜）+ 3D 渲染 + 步骤指令生成 + 评分。 |
 | `pallet-optimizer.js` | **Mode B** 逻辑：单品→外箱→托盘三级优化 + 双视口 3D。封装为 `window.PalletOptimizer`，对 Mode A **零侵入**。 |
 | `lib-loader.js` | Three.js 多级回退加载器（本地优先）。 |
@@ -186,7 +188,7 @@ if (totalWeight > container.maxPayload) return null   // 港口限重剪枝
 1. **Three.js 必须本地化**：曾因依赖 Cloudflare/jsDelivr CDN，国内网络下 A、B 3D 同时失效。现 `vendor/` 已落地，`lib-loader.js` 本地优先。
 2. **Mode B 渲染循环**：不能用一次性 `loopStarted` 标志，否则切回 B 时 `animateB` 不再启动导致「看起来卡死」。已改为 `rafId` 守卫。
 3. **HTML 脚本标签铁律**：底部必须 `<script src="app.js">` + `<script src="pallet-optimizer.js">`，不能用 `ego-app.js`。
-4. **Logo 双轨**：见 §0 约定，改前确认当前是「公司项目」还是「对外静态包」。
+4. **Logo 双轨**：见 §0 约定。内网 EGO 由 `EGO_BRAND=true` 触发（`ego-index.html` 仅本地保留）；公开 SEAN 是默认 `index.html`。改前确认当前是「内网 EGO」还是「公开 SEAN」。
 5. **尺寸单位**：Mode A 用 cm / kg；Mode B 用 **mm** / g（在 Stage1 转 kg）。两套坐标系独立，勿混。
 6. **部署同步**：改 `index.html` / `ego-index.html` / `pallet-optimizer.js` / `app.js` 后，记得同步 `deploy/`；容器改动需 `docker-compose up -d --build` 固化。
 
