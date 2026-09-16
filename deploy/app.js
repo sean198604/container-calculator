@@ -56,6 +56,15 @@ const I18N = {
     batchImport:'批量导入 (Excel 粘贴)', exportPlan:'导出装柜单', batchImportTitle:'批量导入外箱',
     cancel:'取消', parseImport:'解析并导入',
     batchImportHint:'从 Excel 选中单元格区域直接 Ctrl+C 复制，粘贴到下面文本框（每行一个外箱）。<br>列顺序：<b>品名 · 长 · 宽 · 高 · 数量 · 重量</b>（品名放最后也可自动识别；品名可留空）。<br>支持 Tab / 逗号 / 多空格分隔。尺寸按当前单位（cm 或 inch）解析。',
+    ratioMode:'按比例拼柜（套装装载）', ratioHint:'为每个外箱填写比例，测算一个柜最多能装多少套',
+    ratio:'比例', ratioFill:'允许剩余空间补装', ratioFillNote:'补装部分会单独列出，比例不再精确',
+    ratioSummary:'当前比例', ratioResult:'按比例拼柜结果', ratioSets:'最大套数',
+    ratioPerSet:'每套数量', ratioTotal:'总箱数', ratioStrict:'严格比例', ratioFillMode:'含补装',
+    ratioOver:'超装部分', ratioNoFit:'当前柜型装不下一套，请检查尺寸或更换柜型',
+    ratioNoSet:'套装(Set)类型产品不参与比例测算，已自动忽略', ratioCalc:'正在测算比例方案…',
+    ratioSetsUnit:'套', ratioRemain:'剩余空间',
+    ratioFillExtra:'已用剩余空间额外填充 {name}（不成套，单独计入上方括号）',
+    ratioFillNone:'剩余空间放不下任何整箱，结果与严格比例一致',
   },
   en: {
     containerSec:'Container', containerType:'Container Type', custom:'Custom',
@@ -109,6 +118,15 @@ const I18N = {
     batchImport:'Batch Import (Excel paste)', exportPlan:'Export Plan', batchImportTitle:'Batch Import Cartons',
     cancel:'Cancel', parseImport:'Parse & Import',
     batchImportHint:'Copy a cell range from Excel with Ctrl+C and paste into the box below (one carton per line).<br>Column order: <b>Name · L · W · H · Qty · Weight</b> (name may be last or blank; auto-detected).<br>Supports Tab / comma / space separators. Dimensions parsed in the current unit (cm or inch).',
+    ratioMode:'Set Load (Ratio Mode)', ratioHint:'Set a ratio per carton to compute the max number of complete sets per container',
+    ratio:'Ratio', ratioFill:'Fill leftover space', ratioFillNote:'Extra boxes are listed separately; ratio no longer exact',
+    ratioSummary:'Ratio', ratioResult:'Set Load Result', ratioSets:'Max Sets',
+    ratioPerSet:'Per Set', ratioTotal:'Total Boxes', ratioStrict:'Strict ratio', ratioFillMode:'With fill-in',
+    ratioOver:'Over ratio', ratioNoFit:'This container cannot fit even one set — check dimensions or container type',
+    ratioNoSet:'Set-type products are excluded from ratio calculation', ratioCalc:'Calculating set load…',
+    ratioSetsUnit:'sets', ratioRemain:'Free space',
+    ratioFillExtra:'Extra {name} filled into leftover space (not part of a set; shown in brackets above)',
+    ratioFillNone:'No room left for extra boxes — same as strict ratio',
   }
 };
 let LANG='zh';
@@ -129,7 +147,11 @@ function applyI18n(){
   if (typeof refreshProducts==='function') refreshProducts();
   // 重新渲染依赖 LANG 的动态面板，使切换即时生效
   if (lastResult){
-    try { if(lastResult.mode==='known') renderResultsKnown(lastResult); else renderResultsMax(lastResult); } catch(e){}
+    try {
+      if(lastResult.mode==='known') renderResultsKnown(lastResult);
+      else if(lastResult.mode==='ratio') renderResultsRatio(lastResult);
+      else renderResultsMax(lastResult);
+    } catch(e){}
   }
   if (window.PalletOptimizer && typeof window.PalletOptimizer.rerender==='function'){
     try { window.PalletOptimizer.rerender(); } catch(e){}
@@ -194,6 +216,11 @@ let products = [
 ];
 let lastResult = null;
 let selectedContainerIdx = 0;
+// ---------- SET LOAD (按比例拼柜) ----------
+// RATIO_MODE 开启后：产品卡的数量输入切换为「比例」，计算时测算单柜最大成套数。
+// RATIO_FILL 默认关闭 —— 严格按比例只装完整套数，剩余空间留空（配比精确，便于配套发运）。
+let RATIO_MODE = false;
+let RATIO_FILL = false;
 
 function defaultProductName(i){ return (LANG==='zh'?'外箱':'Carton')+(i+1); }
 function getName(p,i){ return (p.name && p.name.trim()) || defaultProductName(i); }
@@ -214,7 +241,11 @@ function addProduct(type){
   refreshProducts();
 }
 function delProduct(i){ if(products.length>1){ products.splice(i,1); refreshProducts(); } }
-function updProduct(i,k,v){ products[i][k]=v; }
+function updProduct(i,k,v){
+  products[i][k]=v;
+  // 比例变更时同步刷新顶部比例串（不重渲染产品卡，避免输入框失焦）
+  if(k==='ratio' && typeof RATIO_MODE!=='undefined' && RATIO_MODE) updateRatioSummary();
+}
 function updProductLen(i,k,v){ products[i][k] = v===''?null:+fromDispLen(+v).toFixed(2); }
 function updProductWt(i,k,v){ products[i][k] = v===''?null:+fromDispWt(+v).toFixed(3); }
 function updPart(i,pIdx,k,v){ products[i].parts[pIdx][k]=v; }
@@ -279,6 +310,17 @@ function refreshProducts(){
   const box = document.getElementById('productList');
   if(!box) return;
   box.innerHTML = products.map((p,i)=>renderProductCard(p,i)).join('');
+  updateRatioSummary();
+}
+
+// 数量输入框：按比例拼柜模式下自动切换为「比例」输入（同一位置，不改变卡片布局）
+function qtyOrRatioField(p,i){
+  if(RATIO_MODE){
+    return `<div><label>${t('ratio')}</label><input type="number" min="1" step="1" value="${ratioOf(p)}" placeholder="1"
+             oninput="updProduct(${i},'ratio',Math.max(1,Math.round(+this.value)||1))" onfocus="this.select()"></div>`;
+  }
+  return `<div><label>${t('qty')}</label><input type="number" value="${p.qty??''}" placeholder="${t('blank')}"
+           oninput="updProduct(${i},'qty',this.value===''?null:+this.value)" onfocus="this.select()"></div>`;
 }
 
 function renderProductCard(p,i){
@@ -309,8 +351,7 @@ function renderProductCard(p,i){
       <div class="row-2" style="margin-top:6px">
         <div><label>${wtLabel()}</label><input type="number" step="0.1" value="${p.weight!=null?(+toDispWt(p.weight)).toFixed(1):''}" placeholder="—"
                oninput="updProductWt(${i},'weight',this.value)" onfocus="this.select()"></div>
-        <div><label>${t('qty')}</label><input type="number" value="${p.qty??''}" placeholder="${t('blank')}"
-               oninput="updProduct(${i},'qty',this.value===''?null:+this.value)" onfocus="this.select()"></div>
+        ${qtyOrRatioField(p,i)}
       </div>
       <label class="single-check"><input type="checkbox" ${p.uprightOnly?'checked':''}
         onchange="updProduct(${i},'uprightOnly',this.checked)">${t('uprightOnly')}</label>
@@ -336,8 +377,7 @@ function renderProductCard(p,i){
       <div class="row-2" style="margin-top:6px">
         <div><label>${wtLabel()}</label><input type="number" step="0.1" value="${p.weight!=null?(+toDispWt(p.weight)).toFixed(1):''}" placeholder="5"
                oninput="updProductWt(${i},'weight',this.value)" onfocus="this.select()"></div>
-        <div><label>${t('qty')}</label><input type="number" value="${p.qty??''}" placeholder="${t('blank')}"
-               oninput="updProduct(${i},'qty',this.value===''?null:+this.value)" onfocus="this.select()"></div>
+        ${qtyOrRatioField(p,i)}
       </div>
       <div class="sub-section">
         <div class="row">
@@ -389,6 +429,7 @@ function renderProductCard(p,i){
       </div>`).join('');
     return `<div class="item-card" style="border-left-color:${color}">
       ${header}
+      ${RATIO_MODE ? `<div class="hint" style="color:#d97706;margin-bottom:6px">${t('ratioNoSet')}</div>` : ''}
       <label>${t('sets')}</label>
       <input type="number" value="${p.setsQty??''}" placeholder="10"
              oninput="updProduct(${i},'setsQty',this.value===''?null:+this.value)" onfocus="this.select()">
@@ -425,6 +466,9 @@ function getContainerCandidates(){
 }
 
 // ---------- EXPAND PRODUCTS TO PACKING UNITS ----------
+// 比例取值：正整数，默认 1（0 / 空 → 1）
+function ratioOf(p){ const v=Math.round(+(p && p.ratio!=null ? p.ratio : 1)); return v>0 ? v : 1; }
+
 function expandUnits(){
   const units = [];
   products.forEach((p,pIdx)=>{
@@ -436,7 +480,7 @@ function expandUnits(){
         productIdx:pIdx, productName:pname, subName:pname,
         type:'standard', L, W, H, qty:p.qty,
         weight: p.weight, maxStack: p.maxStack,
-        uprightOnly:p.uprightOnly, color
+        uprightOnly:p.uprightOnly, color, ratio: ratioOf(p)
       });
     } else if(p.type==='stack'){
       const L=p.L||56, W=p.W||52, H=p.H||82;
@@ -452,7 +496,7 @@ function expandUnits(){
         subName: n>1 ? `${pname} (${n}/叠)` : pname,
         type:'stack', L:sL, W:sW, H:sH, qty:stackQty,
         weight: p.weight, maxStack: p.maxStack,
-        uprightOnly:p.uprightOnly, color,
+        uprightOnly:p.uprightOnly, color, ratio: ratioOf(p),
         stackMeta:{ perStack:n, nestInc:nest, dir:p.stackDir, baseL:L, baseW:W, baseH:H, totalPieces:p.qty }
       });
     } else if(p.type==='set'){
@@ -1443,6 +1487,8 @@ function syncPackCfg(){
 
 function runOptimize(){
   syncPackCfg();
+  // 按比例拼柜（Set Load）：走独立的套数搜索流程（异步，避免长时间阻塞界面）
+  if(RATIO_MODE){ runRatioOptimize(); return; }
   const units = expandUnits();
   if(!units.length){ alert('请添加外箱 / Please add cartons'); return; }
   units.forEach((u,idx)=>{ u.unitIdx = idx; u.__unitIdx = idx; });
@@ -1501,6 +1547,235 @@ function runOptimize(){
     renderResultsMax(result);
     render3DContainer(byContainer[0]);
   }
+}
+
+// =====================================================================
+// SET LOAD — 按比例拼柜（套装装载）
+// =====================================================================
+// 需求：给定各外箱固定比例（如 外箱1 : 外箱2 = 1 : 2），测算单柜最多能装多少「完整套」。
+// 做法：**不改动 packContainer 的摆放逻辑**，只在它外层做套数搜索，摆放规则与原来完全一致：
+//   ① 按柜容（留 5% 余量）与载重估算套数上界 kUp
+//   ② 在 [1, kUp] 上二分：把 ratio×k 当作各 SKU 的目标数量交给 packContainer 试装，
+//      各款全部装下 → 该套数可行，否则不可行
+//   ③ 二分后再向上线性补探至多 3 次，补偿启发式算法可能出现的非单调
+// 全程约 10~16 次 packContainer 调用；每次调用后 await 让出主线程，界面不会假死。
+//
+// 补装模式（RATIO_FILL，默认关闭）：保住 k 套不变，只用柜内剩余空间多塞箱子，
+// 套数不下降则配比仍然精确，只是某款会多出「超装部分」（策略细节见 fillRatioFit 注释）。
+// =====================================================================
+
+// 让出主线程，给浏览器机会刷新进度提示（装箱是同步计算，必须主动分片）
+function ratioUIYield(){
+  return new Promise(res => requestAnimationFrame(()=> setTimeout(res, 0)));
+}
+
+// 目标柜型：指定柜型返回 1 个；auto 返回 4 个候选（随后按理论上界挑最优）
+function ratioContainers(){
+  const containerType = document.getElementById('containerType').value;
+  const mhRaw = +document.getElementById('maxHeight').value;
+  const mh = mhRaw>0 ? fromDispLen(mhRaw) : 0;
+  if(containerType==='custom'){
+    const L=fromDispLen(valOrPh(document.getElementById('contL')));
+    const W=fromDispLen(valOrPh(document.getElementById('contW')));
+    const H=fromDispLen(valOrPh(document.getElementById('contH')));
+    return [{ L, W, H, name:t('custom'), key:'custom', maxWeight:Infinity }];
+  }
+  const keys = containerType==='auto' ? ['20GP','40GP','40HQ','45HQ'] : [containerType];
+  return keys.map(k=>{
+    const c = { ...CONTAINERS[k], key:k };
+    if(mh>0 && mh<c.H) c.H = mh;
+    return c;
+  });
+}
+
+// 试装 k 套：把比例放大 k 倍作为各 SKU 的目标数量，交给原装箱算法
+function tryRatioFit(container, units, ratios, k){
+  const targetUnits = units.map((u,i)=>({ ...u, unitIdx:i, qty: ratios[i]*k, isUnlimited:false }));
+  const pr = packContainer(container, targetUnits);
+  const counts = {};
+  pr.placements.forEach(p=>{ counts[p.unitIdx]=(counts[p.unitIdx]||0)+1; });
+  const ok = targetUnits.every((u,i)=> (counts[i]||0) >= u.qty);
+  const vol = pr.placements.reduce((s,p)=>s+p.L*p.W*p.H,0);
+  return { ok, placements:pr.placements, steps:pr.steps, counts,
+           volume:vol, fillRate: vol/(container.L*container.W*container.H) };
+}
+
+// 补装（RATIO_FILL）：在「保住 k 套」的前提下，用柜内剩余空间尽量多塞箱子。
+// 关键点：**不能**直接不限量重装 —— 那样算法会优先抢装好装的款，导致比例失衡、可配套数暴跌
+// （实测 1:1 用例会从 224 套掉到 128 套）。正确做法是：
+//   把「参与成套的其他款」配额锁定为 ratio×k，只放开其中一款不限量去填剩余空间，
+//   逐款试一遍，只接受「套数不下降且箱数增加」的方案，取箱数最多者。
+// 若没有任何一款能多塞（柜子确实满了），fillUnit 保持 null，结果等同严格模式。
+function fillRatioFit(container, units, ratios, kBase){
+  const base = tryRatioFit(container, units, ratios, kBase);
+  let best = { placements:base.placements, steps:base.steps, counts:base.counts,
+               sets:kBase, volume:base.volume, fillRate:base.fillRate, fillUnit:null };
+  for(let j=0; j<units.length; j++){
+    const tu = units.map((u,i)=>({ ...u, unitIdx:i, qty: i===j ? null : ratios[i]*kBase }));
+    const pr = packContainer(container, tu);
+    const counts = {};
+    pr.placements.forEach(p=>{ counts[p.unitIdx]=(counts[p.unitIdx]||0)+1; });
+    let sets = Infinity;
+    units.forEach((u,i)=>{ sets = Math.min(sets, Math.floor((counts[i]||0)/ratios[i])); });
+    if(!isFinite(sets)) sets = 0;
+    if(sets < kBase) continue;                                  // 套数下降 → 弃用
+    if(pr.placements.length <= best.placements.length) continue; // 没多装 → 弃用
+    const vol = pr.placements.reduce((s,p)=>s+p.L*p.W*p.H,0);
+    best = { placements:pr.placements, steps:pr.steps, counts, sets,
+             volume:vol, fillRate: vol/(container.L*container.W*container.H), fillUnit:j };
+  }
+  return best;
+}
+
+function showRatioBusy(on, msg){
+  const el = document.getElementById('ratioBusy');
+  if(!el) return;
+  el.textContent = msg || t('ratioCalc');
+  el.style.display = on ? 'block' : 'none';
+}
+
+async function runRatioOptimize(){
+  const allUnits = expandUnits();
+  const ignoredSets = allUnits.filter(u=>u.type==='set').length;
+  const units = allUnits.filter(u=>u.type!=='set');
+  if(!units.length){ alert(t('ratioNoFit')); return; }
+  units.forEach((u,i)=>{ u.unitIdx=i; u.__unitIdx=i; u.isUnlimited=false; });
+  const ratios = units.map(u=> u.ratio||1);
+
+  const cands = ratioContainers();
+  const groupVol = units.reduce((s,u,i)=> s + ratios[i]*u.L*u.W*u.H, 0);
+  const groupWt  = units.reduce((s,u,i)=> s + ratios[i]*(u.weight||0), 0);
+
+  // 套数上界：受柜容（留 5% 余量）与载重双重约束
+  const upperOf = c=>{
+    let k = Math.floor(c.L*c.W*c.H*0.95/groupVol);
+    if(groupWt>0 && isFinite(c.maxWeight)) k = Math.min(k, Math.floor(c.maxWeight/groupWt));
+    return Math.max(1, Math.min(k, 20000));
+  };
+  let container = cands[0], kUp = upperOf(cands[0]);
+  if(cands.length>1){
+    cands.forEach(c=>{ const k=upperOf(c); if(k>kUp){ kUp=k; container=c; } });
+  }
+
+  showRatioBusy(true);
+  try{
+    await ratioUIYield();
+    let lo=1, hi=kUp, best=0, bestRes=null, calls=0;
+    while(lo<=hi){
+      const mid = (lo+hi)>>1;
+      const r = tryRatioFit(container, units, ratios, mid); calls++;
+      await ratioUIYield();
+      if(r.ok){ best=mid; bestRes=r; lo=mid+1; } else { hi=mid-1; }
+    }
+    for(let k=best+1; k<=Math.min(best+3, kUp); k++){
+      const r = tryRatioFit(container, units, ratios, k); calls++;
+      await ratioUIYield();
+      if(r.ok){ best=k; bestRes=r; } else break;
+    }
+    if(!bestRes){
+      renderRatioNone(container, units, ratios, ignoredSets);
+      return;
+    }
+    let result = {
+      mode:'ratio', container, units, ratios,
+      sets:best, counts:bestRes.counts, placements:bestRes.placements,
+      steps:bestRes.steps, volume:bestRes.volume, fillRate:bestRes.fillRate,
+      strict:!RATIO_FILL, calls, upper:kUp, ignoredSets
+    };
+    if(RATIO_FILL){
+      // 补装：保住 k 套不变，逐款尝试用柜内剩余空间多塞箱子（策略详见 fillRatioFit 注释）
+      const strictBoxes = bestRes.placements.length;
+      const f = fillRatioFit(container, units, ratios, best);
+      calls += units.length + 1;
+      await ratioUIYield();
+      result = { ...result, sets:f.sets, counts:f.counts, placements:f.placements,
+                 steps:f.steps, volume:f.volume, fillRate:f.fillRate, calls,
+                 strict:false, strictBoxes, fillUnit:f.fillUnit };
+    }
+    lastResult = result;
+    renderResultsRatio(result);
+    render3DContainer(result);
+  } finally {
+    showRatioBusy(false);
+  }
+}
+
+function renderRatioNone(container, units, ratios, ignoredSets){
+  const box = document.getElementById('results');
+  box.innerHTML = `<div class="result-box">
+    <h4>🧩 ${t('ratioResult')}</h4>
+    <div class="result-row warn"><span>${t('ratioNoFit')}</span><span class="val">0</span></div>
+    <div class="result-row"><span>${t('ratioSummary')}</span><span class="val">${ratios.join(' : ')}</span></div>
+    <div class="result-row"><span>${t('containerType')}</span><span class="val">${container.name}</span></div>
+    ${ignoredSets?`<div class="hint" style="color:#d97706;margin-top:6px">${t('ratioNoSet')}</div>`:''}
+  </div>`;
+  renderKPI({ fillRate:0, totalPcs:0, totalCbm:0, totalWeight:0, maxWeight:null });
+}
+
+function renderResultsRatio(r){
+  const box = document.getElementById('results');
+  let totalW=0, totalCbm=0;
+  (r.placements||[]).forEach(p=>{ totalW += (p.weight||0); totalCbm += p.L*p.W*p.H/1e6; });
+  const totalPcs = (r.placements||[]).length;
+  renderKPI({
+    fillRate: r.fillRate,
+    totalPcs,
+    totalCbm, totalWeight: totalW,
+    maxWeight: (r.container.maxWeight && isFinite(r.container.maxWeight)) ? r.container.maxWeight : null
+  });
+  const ratioStr = r.ratios.join(' : ');
+  let html = `<div class="result-box">
+    <h4>🧩 ${t('ratioResult')} <span class="tag">${r.strict?t('ratioStrict'):t('ratioFillMode')}</span></h4>
+    <div class="result-row good"><span>${t('ratioSets')}</span>
+      <span class="val" style="font-size:15px">${fmt(r.sets)} ${t('ratioSetsUnit')}</span></div>
+    <div class="result-row"><span>${t('ratioSummary')}</span><span class="val">${ratioStr}</span></div>
+    <div class="result-row"><span>${t('containerType')}</span><span class="val">${r.container.name}</span></div>
+    <div class="result-row ${rateClass(r.fillRate)}"><span>${t('avgFill')}</span>
+      <span class="val">${rateBadge(r.fillRate)}</span></div>
+    <div class="progress"><div class="progress-bar" style="width:${Math.min(100,r.fillRate*100)}%"></div></div>
+    ${r.strict
+      ? `<div class="hint" style="margin-top:6px">${t('ratioRemain')}: ${pct(Math.max(0,1-r.fillRate))}</div>`
+      : `<div class="hint" style="margin-top:6px;color:#d97706">${t('ratioFillNote')}</div>`}
+  </div>`;
+  html += `<div class="result-box"><h4>📦 ${t('ratioPerSet')}</h4>`;
+  r.units.forEach((u,i)=>{
+    const per = r.ratios[i], total = r.counts[i]||0;
+    const over = r.strict ? 0 : Math.max(0, total - per*r.sets);
+    html += `<div class="result-row">
+      <span><span class="legend-swatch" style="display:inline-block;width:10px;height:10px;background:${u.color};border-radius:2px;margin-right:5px"></span>${u.subName}</span>
+      <span class="val">${fmt(per)} × ${fmt(r.sets)} = <strong>${fmt(total)}</strong>${over>0?` <span style="color:#d97706">(+${fmt(over)})</span>`:''}</span></div>`;
+  });
+  html += `<div class="hint" style="margin-top:6px">${t('ratioTotal')}: ${fmt(totalPcs)}</div>`;
+  if(!r.strict){
+    html += (r.fillUnit!=null)
+      ? `<div class="hint" style="margin-top:4px;color:#b45309">${t('ratioFillExtra', { name: (r.units[r.fillUnit]||{}).subName || '' })}</div>`
+      : `<div class="hint" style="margin-top:4px">${t('ratioFillNone')}</div>`;
+  }
+  if(r.ignoredSets) html += `<div class="hint" style="color:#d97706">${t('ratioNoSet')}</div>`;
+  html += `</div>`;
+  if(r.steps) html += renderSteps(r.steps);
+  html += renderCoGBox(computeCoG(r.placements||[], r.container));
+  box.innerHTML = html + renderLegend(r.units);
+}
+
+// 切换「按比例拼柜」模式：产品卡的数量输入 → 比例输入
+function toggleRatioMode(on){
+  RATIO_MODE = (on!==undefined) ? !!on : !RATIO_MODE;
+  const panel = document.getElementById('ratioPanel');
+  if(panel) panel.style.display = RATIO_MODE ? 'block' : 'none';
+  const cb = document.getElementById('ratioMode');
+  if(cb) cb.checked = RATIO_MODE;
+  refreshProducts();
+  updateRatioSummary();
+}
+
+// 顶部实时显示当前比例串（1 : 2）
+function updateRatioSummary(){
+  const el = document.getElementById('ratioSummary');
+  if(!el) return;
+  if(!RATIO_MODE){ el.textContent = ''; return; }
+  const us = expandUnits().filter(u=>u.type!=='set');
+  el.textContent = us.length ? t('ratioSummary') + ': ' + us.map(u=>u.ratio||1).join(' : ') : '';
 }
 
 // ---------- RESULT RENDERING ----------

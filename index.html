@@ -289,6 +289,19 @@
   #batchMsg { min-height:16px; }
   #batchMsg.ok { color:var(--green); font-weight:600; }
   #batchMsg.err { color:var(--red); font-weight:600; }
+
+  /* ---------- Set Load 按比例拼柜 ---------- */
+  .ratio-switch { display:flex; align-items:center; gap:7px; cursor:pointer; font-size:12.5px;
+                  font-weight:600; color:var(--text); background:var(--panel-soft);
+                  border:1px solid var(--border); border-radius:8px; padding:7px 10px; margin:6px 0; }
+  .ratio-switch:hover { border-color:var(--primary); color:var(--primary); }
+  .ratio-switch input { margin:0; cursor:pointer; }
+  .ratio-panel { border:1px solid var(--border); border-radius:8px; padding:9px 10px;
+                 background:var(--panel-soft); margin-bottom:8px; }
+  .ratio-summary { font-size:12px; font-weight:600; color:var(--primary); margin-top:5px;
+                   font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; letter-spacing:.5px; }
+  #ratioBusy { display:none; font-size:12px; color:var(--primary); text-align:center; padding:7px;
+               margin-top:6px; background:var(--primary-soft); border:1px solid #d2defa; border-radius:7px; }
 </style>
 </head>
 <body>
@@ -346,6 +359,21 @@
       <div class="section">
         <div class="section-title" data-i18n="products">外箱明细 / Carton List</div>
         <div class="hint" data-i18n="productHint">添加各类外箱，系统统一装入同一批集装箱</div>
+
+        <!-- 按比例拼柜（Set Load）：锁定各外箱比例，测算单柜最大成套数 -->
+        <label class="ratio-switch">
+          <input type="checkbox" id="ratioMode" onchange="toggleRatioMode(this.checked)">
+          <span data-i18n="ratioMode">按比例拼柜（套装装载）</span>
+        </label>
+        <div id="ratioPanel" class="ratio-panel" style="display:none">
+          <div class="hint" data-i18n="ratioHint">为每个外箱填写比例，测算一个柜最多能装多少套</div>
+          <div id="ratioSummary" class="ratio-summary"></div>
+          <label class="single-check" style="margin-top:6px">
+            <input type="checkbox" id="ratioFill" onchange="RATIO_FILL=this.checked">
+            <span data-i18n="ratioFill">允许剩余空间补装</span>
+          </label>
+        </div>
+
         <div id="productList"></div>
         <div class="add-buttons">
           <button class="add-btn std" onclick="addProduct('standard')">+ <span data-i18n="addStd">标准 Standard</span></button>
@@ -356,6 +384,7 @@
       </div>
 
       <button class="btn" onclick="runOptimize()" data-i18n="optimize">计算最优方案 / Optimize</button>
+      <div id="ratioBusy"></div>
     </div>
 
     <!-- CENTER 3D -->
@@ -532,9 +561,9 @@
   </div>
 </div>
 
-<script src="lib-loader.js?v=20260916A"></script>
-<script src="app.js?v=20260916A"></script>
-<script src="pallet-optimizer.js?v=20260916A"></script>
+<script src="lib-loader.js?v=20260916B"></script>
+<script src="app.js?v=20260916B"></script>
+<script src="pallet-optimizer.js?v=20260916B"></script>
 <div id="tooltip"></div>
 
 <!-- Batch import modal -->
@@ -558,7 +587,7 @@
 <!-- 项目版本号角标（右下角）：YYYYMMDD + 当天第 N 版字母，如 20260916A。
      数据源优先级：/api/version（后端按 git 实时算）→ version.json（Docker 镜像/静态托管）→ 下面的内嵌兜底值。
      内嵌值由 `npm run version:sync` 自动同步，直接用浏览器打开 HTML 也能显示。 -->
-<div class="ver-tag" id="verTag" data-version="20260916A" title="版本 20260916A">
+<div class="ver-tag" id="verTag" data-version="20260916B" title="版本 20260916A">
   <span class="ver-tag__v">20260916A</span><span class="ver-tag__hash"></span>
 </div>
 </body>

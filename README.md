@@ -44,6 +44,10 @@ npm start
 - **装柜动画与回放**：按真实装柜顺序（由柜内向外、逐列推进）播放 / 拖动进度条逐步回放，直观演示装箱过程。
 - **重心校核**：自动计算重心偏移，提示偏重 / 倾覆风险，保证运输安全。
 - **SKU 图例与明细**：按外箱汇总数量、体积、毛重，生成可打印的装柜清单。
+- **🧩 按比例拼柜（Set Load / 套装装载）**：多款外箱锁定配比（如 外箱1 : 外箱2 = 1 : 2），
+  直接测算**单柜最多能装多少完整套**。摆放规则完全沿用原装柜算法，只在其外层做套数搜索。
+  默认**严格比例**（只装完整套，余位留空）；可勾选「允许剩余空间补装」，在不减少套数的前提下
+  用余位额外塞箱，超装部分单独列出。
 
 ### 🅱 模式 B · 单品 → 外箱 → 托盘
 - **三级联动**：输入单品规格与目标 PCS，自动推导外箱尺寸与打托方案（列阵 / 交错 / 风车三种码垛图案，auto 自动择优）。
@@ -103,6 +107,9 @@ npm start
 ## 🏗 算法要点
 
 - 模式 A 对每种外箱枚举 6 朝向与行列层组合，最大化集装箱利用率并校验重心安全域。
+- 模式 A「按比例拼柜」不改动装柜算法本身：先按柜容（留 5% 余量）与载重估算套数上界，
+  再在 `[1, 上界]` 上**二分**——把 `比例 × k` 当作各款目标数量交给原算法试装，全部装下即可行；
+  二分后向上线性补探至多 3 次，补偿启发式算法可能出现的非单调。全程约 10~16 次试装，实测 < 0.6s。
 - 模式 B 在托盘平面内枚举列阵 / 交错 / 风车码垛，结合限重、溢出与堆码约束选出 Top 10 方案。
 - 全部计算在浏览器本地完成，输入即算，不上传任何数据。
 
@@ -117,6 +124,7 @@ npm start
 **Smart Container Load Calculator** — optimize mixed-SKU container packing and carton→pallet building (single-SKU stuffing) with interactive 3D visualization and step-by-step loading animation.
 
 - **Mode A**: multi-SKU container loading with 3D view (iso / top / front / side), loading-sequence replay, and center-of-gravity safety check.
+- **Set Load**: lock a fixed ratio across carton types (e.g. carton1 : carton2 = 1 : 2) and get the maximum number of **complete sets** per container. Placement rules are unchanged — a binary search over the set count is layered on top. Strict by default; an optional "fill leftover space" switch adds extra boxes without reducing the set count.
 - **Mode B**: cascade optimization from item → carton → pallet with column / interlock / pinwheel patterns, ISO-pallet and container constraints.
 - **Extras**: Excel paste import, printable A4 loading plan, metric / imperial toggle, and full Chinese / English i18n.
 

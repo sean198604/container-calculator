@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "version:sync": "node scripts/gen-version.js"
+    "version:sync": "node scripts/gen-version.js",
+    "test:set-load": "node scripts/test-set-load.js"
   },
   "dependencies": {
     "express": "^4.18.2"
