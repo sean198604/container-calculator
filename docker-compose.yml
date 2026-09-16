@@ -7,8 +7,10 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      # 内网 7002 使用 EGO International 品牌（EGO_BRAND=true → ego-index.html）
-      # GitHub 公开部署（无此变量）默认 SEAN 版 index.html
+      # 内网 7002 使用 EGO International 品牌。
+      # 激活条件：EGO_BRAND=true 且镜像内存在 assets/logo.png → server.js 在
+      # 返回 index.html 时把 SEAN 的 logo/alt/favicon 动态替换为 EGO 版。
+      # GitHub 公开部署（无此变量、且 logo.png 被 .gitignore 忽略）默认 SEAN 品牌。
       - EGO_BRAND=true
     networks:
       - container-calculator_default
