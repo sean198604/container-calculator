@@ -1,0 +1,10 @@
+# 构建上下文排除项
+# .git 不进镜像：容器里没有 git 可执行文件，版本号一律走 version.json（由 npm run version:sync 生成）
+.git
+.gitignore
+node_modules
+.workbuddy
+npm-debug.log*
+*.log
+Dockerfile
+docker-compose.yml

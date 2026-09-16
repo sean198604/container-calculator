@@ -2422,7 +2422,43 @@ function bootApp() {
     }, 400);
   }
 }
+// =====================================================================
+// VERSION TAG (右下角项目版本号)
+// =====================================================================
+// 规则：YYYYMMDD + 当天第 N 版字母（1→A … 26→Z，27→AA），
+//       字母序号 = 该提交是「提交日当天」的第几个 git commit —— 与 git 编号一一对应。
+// 数据源优先级：/api/version（后端按 git 实时算）→ version.json（Docker 镜像/静态托管）
+//              → HTML 内嵌 data-version（双击直接打开 HTML 时的兜底）。
+async function initVersionTag(){
+  const el = document.getElementById('verTag');
+  if (!el) return;
+  const valEl  = el.querySelector('.ver-tag__v');
+  const hashEl = el.querySelector('.ver-tag__hash');
+  const render = (v) => {
+    if (!v || !v.version || v.version === 'unknown') return;
+    if (valEl)  valEl.textContent  = v.version;
+    if (hashEl) hashEl.textContent = v.commit ? '· ' + v.commit : '';
+    const tip = ['版本 ' + v.version];
+    if (v.date)          tip.push('日期 ' + v.date + '（当天第 ' + (v.seq || 1) + ' 版）');
+    if (v.commit)        tip.push('commit ' + v.commit);
+    if (v.commitSubject) tip.push(v.commitSubject);
+    if (v.commitTime)    tip.push(v.commitTime);
+    el.title = tip.join('\n');
+  };
+  for (const src of ['/api/version', 'version.json']) {
+    try {
+      const r = await fetch(src, { cache: 'no-store' });
+      if (!r.ok) continue;
+      const j = await r.json();
+      if (j && j.version) { render(j); return; }
+    } catch (e) { /* 静默降级到下一个数据源 */ }
+  }
+  render({ version: el.dataset.version, commit: el.dataset.commit || '' });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  // 右下角版本号：不依赖 3D 加载，DOM 就绪即渲染
+  try { initVersionTag(); } catch(e){}
   // 面板折叠状态内联强控：DOM 就绪即同步，不依赖 3D 加载
   try { document.querySelectorAll('.mode-view').forEach(v=>applyPanelState(v)); } catch(e){}
   // 必须等 THREE 与 OrbitControls 二者都就绪，否则 new THREE.OrbitControls 会抛

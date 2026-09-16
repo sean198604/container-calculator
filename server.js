@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const version = require('./lib/version');
 
 const app = express();
 const PORT = process.env.PORT || 7002;
@@ -34,6 +35,14 @@ app.get('/', (req, res) => {
                .split('alt="SEAN Logo"').join('alt="EGO International Logo"');
   }
   res.type('html').send(html);
+});
+
+// 前端版本号（右下角角标数据源）
+// 规则：YYYYMMDD + 当天第 N 版字母（1→A … 27→AA），字母序号 = 该提交是当天第几个 git commit。
+// 优先按 git 实时计算（本地 / 带 .git 的部署），无 git 时报 version.json（Docker 镜像 / 静态托管）。
+app.get('/api/version', (req, res) => {
+  noCache(res);
+  res.json(version.getVersion());
 });
 
 // 健康检查

@@ -35,8 +35,11 @@
 | `pallet-optimizer.js` | **Mode B** 逻辑：单品→外箱→托盘三级优化 + 双视口 3D。封装为 `window.PalletOptimizer`，对 Mode A **零侵入**。 |
 | `lib-loader.js` | Three.js 多级回退加载器（本地优先）。 |
 | `vendor/` | 本地化 Three.js r128 + OrbitControls，离线可用。 |
-| `server.js` / `Dockerfile` / `docker-compose.yml` | 7002 容器部署。 |
-| `deploy/` | 上传到静态托管的完整静态包（含 SEAN logo）。 |
+| `server.js` / `Dockerfile` / `docker-compose.yml` | 7002 容器部署。`server.js` 另提供 `GET /api/version`（版本号数据源）。 |
+| `lib/version.js` | **版本号唯一真源**：YYYYMMDD + 当天第 N 版字母；git 实时计算，`version.json` 兜底。 |
+| `scripts/gen-version.js` | 版本号同步脚本（`npm run version:sync`）：生成 `version.json` + 同步两个 HTML 的内嵌值与 `?v=`。 |
+| `version.json` | 版本号快照，Docker 镜像 / 静态托管（无 git）时的数据源；随每次发版提交。 |
+| `deploy/` | 上传到静态托管的完整静态包（含 SEAN logo 与 `version.json`）。 |
 
 ---
 

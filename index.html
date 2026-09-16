@@ -307,7 +307,6 @@
       <button class="fold-btn" onclick="togglePanel('right')" title="折叠/展开右侧看板" data-i18n="foldRight">◨ 看板</button>
       <button class="lang-toggle" id="unitToggle" onclick="toggleUnit()" title="Metric ↔ Imperial 切换">cm / kg</button>
       <button class="lang-toggle" onclick="toggleLang()"><span id="langLabel">English</span></button>
-      <span id="verBadge" style="font-size:11px;color:var(--text-2);background:var(--panel-soft);border:1px solid var(--border);border-radius:5px;padding:3px 6px;line-height:1;white-space:nowrap">v5</span>
     </div>
   </header>
 
@@ -533,9 +532,9 @@
   </div>
 </div>
 
-<script src="lib-loader.js?v=5"></script>
-<script src="app.js?v=5"></script>
-<script src="pallet-optimizer.js?v=5"></script>
+<script src="lib-loader.js?v=20260916A"></script>
+<script src="app.js?v=20260916A"></script>
+<script src="pallet-optimizer.js?v=20260916A"></script>
 <div id="tooltip"></div>
 
 <!-- Batch import modal -->
@@ -554,6 +553,13 @@
       <button class="btn btn-small" onclick="doBatchImport()" data-i18n="parseImport">解析并导入 / Parse &amp; Import</button>
     </div>
   </div>
+</div>
+
+<!-- 项目版本号角标（右下角）：YYYYMMDD + 当天第 N 版字母，如 20260916A。
+     数据源优先级：/api/version（后端按 git 实时算）→ version.json（Docker 镜像/静态托管）→ 下面的内嵌兜底值。
+     内嵌值由 `npm run version:sync` 自动同步，直接用浏览器打开 HTML 也能显示。 -->
+<div class="ver-tag" id="verTag" data-version="20260916A" title="版本 20260916A">
+  <span class="ver-tag__v">20260916A</span><span class="ver-tag__hash"></span>
 </div>
 </body>
 </html>
