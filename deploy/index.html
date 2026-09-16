@@ -15,7 +15,8 @@
     --text:#16223b; --text-2:#51607a; --text-3:#8b95a8;
     --primary:#2563eb; --primary-2:#1d4ed8; --primary-soft:#eef4ff;
     --green:#10b981; --amber:#f59e0b; --red:#ef4444;
-    --header:#ffffff; --header-2:#f4f7fb;
+    /* 顶栏「背景」渐变专用：这是背景色，禁止拿来当文字色（白底白字会直接看不见） */
+    --header-bg:#ffffff; --header-bg-2:#f4f7fb;
     --radius:10px;
     --shadow-sm:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
     --shadow-md:0 4px 16px rgba(16,24,40,.08);
@@ -36,7 +37,7 @@
   .mode-view.b.collapsed-right { grid-template-columns: 396px 1fr 0; }
   .app.collapsed-left.collapsed-right, .mode-view.collapsed-left.collapsed-right,
   .mode-view.b.collapsed-left.collapsed-right { grid-template-columns: 0 1fr 0; }
-  header { background: linear-gradient(180deg, var(--header) 0%, var(--header-2) 100%);
+  header { background: linear-gradient(180deg, var(--header-bg) 0%, var(--header-bg-2) 100%);
            color: var(--text); padding: 10px 18px;
            display: flex; justify-content: space-between; align-items: center; gap: 14px;
            box-shadow: 0 1px 0 var(--border), var(--shadow-md); z-index: 20; }
@@ -69,11 +70,26 @@
   .panel-right { border-right: none; border-left: 1px solid var(--border); }
   .section { margin-bottom: 16px; background: var(--panel-soft); border: 1px solid var(--border);
              border-radius: var(--radius); padding: 12px 12px 10px; box-shadow: var(--shadow-sm); }
-  .section-title { font-size: 13px; font-weight: 700; color: var(--header); margin-bottom: 8px;
+  .section-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 8px;
                    padding-bottom: 6px; border-bottom: 2px solid var(--primary);
                    display:flex; align-items:center; gap:6px; }
   .section-title::before { content:''; width:4px; height:14px; background:var(--primary);
                            border-radius:2px; display:inline-block; }
+  /* ---------- 左侧栏卡片折叠 ---------- */
+  .section-title.sec-toggle { cursor:pointer; user-select:none; -webkit-user-select:none; }
+  .section-title.sec-toggle:hover { color: var(--primary); }
+  .section-title.sec-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px;
+                                            border-radius: 4px; }
+  .section-title .sec-label { flex:1; min-width:0; }
+  .sec-arrow { flex:none; display:inline-flex; align-items:center; justify-content:center;
+               width:18px; height:18px; border-radius:50%; font-size:11px; line-height:1;
+               color:var(--text-2); background:var(--panel); border:1px solid var(--border);
+               transition: transform .18s ease, color .15s ease, border-color .15s ease; }
+  .section-title.sec-toggle:hover .sec-arrow { color: var(--primary); border-color: var(--primary); }
+  .section.collapsed .sec-arrow { transform: rotate(-90deg); }
+  .section.collapsed .section-title { margin-bottom:0; padding-bottom:0;
+                                      border-bottom-color:transparent; }
+  .section.collapsed .section-body { display:none; }
   label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 4px; margin-top: 8px; font-weight:500; }
   input[type="number"], input[type="text"], select {
     width: 100%; padding: 7px 9px; border: 1px solid var(--border-strong); border-radius: 6px;
@@ -130,7 +146,7 @@
                cursor: pointer; font-size: 12px; }
   .result-box { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
                 padding: 12px; margin-bottom: 10px; box-shadow: var(--shadow-sm); }
-  .result-box h4 { font-size: 13px; margin-bottom: 6px; color: var(--header); font-weight:700; }
+  .result-box h4 { font-size: 13px; margin-bottom: 6px; color: var(--text); font-weight:700; }
   .result-row { display: flex; justify-content: space-between; font-size: 12px;
                 padding: 3px 0; color: var(--text-2); gap: 8px; }
   .result-row .val { font-weight: 600; color: var(--text); text-align: right; }
@@ -278,7 +294,7 @@
                 display:flex; align-items:center; justify-content:center; backdrop-filter:blur(2px); }
   .modal-card { background:var(--panel); border-radius:14px; box-shadow:var(--shadow-lg);
                 width:min(680px, 92vw); padding:20px 22px; max-height:88vh; overflow-y:auto; }
-  .modal-card h3 { font-size:15px; color:var(--header); margin-bottom:8px; font-weight:700; }
+  .modal-card h3 { font-size:15px; color:var(--text); margin-bottom:8px; font-weight:700; }
   .modal-card textarea { width:100%; padding:10px; border:1px solid var(--border-strong);
                          border-radius:8px; font-family:Consolas,Menlo,monospace; font-size:12px;
                          min-height:180px; resize:vertical; line-height:1.6; box-sizing:border-box; }
@@ -328,59 +344,69 @@
     <!-- LEFT PANEL -->
     <div class="panel">
       <!-- Container config -->
-      <div class="section">
-        <div class="section-title" data-i18n="containerSec">集装箱 / Container</div>
-        <label data-i18n="containerType">集装箱类型</label>
-        <select id="containerType" onchange="onContainerChange()">
-          <option value="auto" data-i18n="autoOpt">🤖 自动推荐</option>
-          <option value="20GP">20' GP — 589.8×235.2×239.3 cm</option>
-          <option value="40GP">40' GP — 1203.2×235.2×239.3 cm</option>
-          <option value="40HQ" selected>40' HQ — 1203.2×235.2×269.8 cm</option>
-          <option value="45HQ">45' HQ — 1360.8×235.2×269.8 cm</option>
-          <option value="custom" data-i18n="custom">自定义 / Custom</option>
-        </select>
-        <div class="hint" id="autoHint" data-i18n="autoHint">自动组合 20GP/40GP/40HQ/45HQ 找最优搭配</div>
-        <div class="row" id="customContainer" style="display:none;margin-top:6px">
-          <div><label>L (cm)</label><input type="number" id="contL" placeholder="1203.2" onfocus="this.select()"></div>
-          <div><label>W (cm)</label><input type="number" id="contW" placeholder="235.2" onfocus="this.select()"></div>
-          <div><label>H (cm)</label><input type="number" id="contH" placeholder="269.8" onfocus="this.select()"></div>
+      <div class="section" id="secContainer">
+        <div class="section-title sec-toggle" onclick="toggleSection(this)" data-i18n-title="secToggle">
+          <span class="sec-label" data-i18n="containerSec">集装箱 / Container</span>
+          <span class="sec-arrow">▾</span>
         </div>
-        <div class="row-2" style="margin-top:6px">
-          <div><label data-i18n="maxH">限高 (cm)</label><input type="number" id="maxHeight" placeholder="auto" onfocus="this.select()"></div>
-          <div><label data-i18n="cbmRate">装载率目标 %</label><input type="number" id="targetRate" placeholder="可选 / optional" onfocus="this.select()"></div>
-        </div>
-        <div class="row-2" style="margin-top:6px">
-          <div><label data-i18n="margin">装载余量/涨箱 %</label><input type="number" id="loadMargin" min="0" max="5" step="0.1" value="1.5" onfocus="this.select()" title="按比例缩减可用内尺寸；柜门立柱与角件固定 5cm 避让"></div>
-          <div style="font-size:11px;color:#8b95a8;align-self:end" data-i18n="doorNote">柜门/角件固定 5cm 避让</div>
+        <div class="section-body">
+          <label data-i18n="containerType">集装箱类型</label>
+          <select id="containerType" onchange="onContainerChange()">
+            <option value="auto" data-i18n="autoOpt">🤖 自动推荐</option>
+            <option value="20GP">20' GP — 589.8×235.2×239.3 cm</option>
+            <option value="40GP">40' GP — 1203.2×235.2×239.3 cm</option>
+            <option value="40HQ" selected>40' HQ — 1203.2×235.2×269.8 cm</option>
+            <option value="45HQ">45' HQ — 1360.8×235.2×269.8 cm</option>
+            <option value="custom" data-i18n="custom">自定义 / Custom</option>
+          </select>
+          <div class="hint" id="autoHint" data-i18n="autoHint">自动组合 20GP/40GP/40HQ/45HQ 找最优搭配</div>
+          <div class="row" id="customContainer" style="display:none;margin-top:6px">
+            <div><label>L (cm)</label><input type="number" id="contL" placeholder="1203.2" onfocus="this.select()"></div>
+            <div><label>W (cm)</label><input type="number" id="contW" placeholder="235.2" onfocus="this.select()"></div>
+            <div><label>H (cm)</label><input type="number" id="contH" placeholder="269.8" onfocus="this.select()"></div>
+          </div>
+          <div class="row-2" style="margin-top:6px">
+            <div><label data-i18n="maxH">限高 (cm)</label><input type="number" id="maxHeight" placeholder="auto" onfocus="this.select()"></div>
+            <div><label data-i18n="cbmRate">装载率目标 %</label><input type="number" id="targetRate" placeholder="可选 / optional" onfocus="this.select()"></div>
+          </div>
+          <div class="row-2" style="margin-top:6px">
+            <div><label data-i18n="margin">装载余量/涨箱 %</label><input type="number" id="loadMargin" min="0" max="5" step="0.1" value="1.5" onfocus="this.select()" title="按比例缩减可用内尺寸；柜门立柱与角件固定 5cm 避让"></div>
+            <div style="font-size:11px;color:#8b95a8;align-self:end" data-i18n="doorNote">柜门/角件固定 5cm 避让</div>
+          </div>
         </div>
       </div>
 
       <!-- Products -->
-      <div class="section">
-        <div class="section-title" data-i18n="products">外箱明细 / Carton List</div>
-        <div class="hint" data-i18n="productHint">添加各类外箱，系统统一装入同一批集装箱</div>
+      <div class="section" id="secProducts">
+        <div class="section-title sec-toggle" onclick="toggleSection(this)" data-i18n-title="secToggle">
+          <span class="sec-label" data-i18n="products">外箱明细 / Carton List</span>
+          <span class="sec-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="hint" data-i18n="productHint">添加各类外箱，系统统一装入同一批集装箱</div>
 
-        <!-- 按比例拼柜（Set Load）：锁定各外箱比例，测算单柜最大成套数 -->
-        <label class="ratio-switch">
-          <input type="checkbox" id="ratioMode" onchange="toggleRatioMode(this.checked)">
-          <span data-i18n="ratioMode">按比例拼柜（套装装载）</span>
-        </label>
-        <div id="ratioPanel" class="ratio-panel" style="display:none">
-          <div class="hint" data-i18n="ratioHint">为每个外箱填写比例，测算一个柜最多能装多少套</div>
-          <div id="ratioSummary" class="ratio-summary"></div>
-          <label class="single-check" style="margin-top:6px">
-            <input type="checkbox" id="ratioFill" onchange="RATIO_FILL=this.checked">
-            <span data-i18n="ratioFill">允许剩余空间补装</span>
+          <!-- 按比例拼柜（Set Load）：锁定各外箱比例，测算单柜最大成套数 -->
+          <label class="ratio-switch">
+            <input type="checkbox" id="ratioMode" onchange="toggleRatioMode(this.checked)">
+            <span data-i18n="ratioMode">按比例拼柜（套装装载）</span>
           </label>
-        </div>
+          <div id="ratioPanel" class="ratio-panel" style="display:none">
+            <div class="hint" data-i18n="ratioHint">为每个外箱填写比例，测算一个柜最多能装多少套</div>
+            <div id="ratioSummary" class="ratio-summary"></div>
+            <label class="single-check" style="margin-top:6px">
+              <input type="checkbox" id="ratioFill" onchange="RATIO_FILL=this.checked">
+              <span data-i18n="ratioFill">允许剩余空间补装</span>
+            </label>
+          </div>
 
-        <div id="productList"></div>
-        <div class="add-buttons">
-          <button class="add-btn std" onclick="addProduct('standard')">+ <span data-i18n="addStd">标准 Standard</span></button>
-          <button class="add-btn stk" onclick="addProduct('stack')">+ <span data-i18n="addStk">叠装 Stack</span></button>
-          <button class="add-btn set" onclick="addProduct('set')">+ <span data-i18n="addSet">套装 Set</span></button>
+          <div id="productList"></div>
+          <div class="add-buttons">
+            <button class="add-btn std" onclick="addProduct('standard')">+ <span data-i18n="addStd">标准 Standard</span></button>
+            <button class="add-btn stk" onclick="addProduct('stack')">+ <span data-i18n="addStk">叠装 Stack</span></button>
+            <button class="add-btn set" onclick="addProduct('set')">+ <span data-i18n="addSet">套装 Set</span></button>
+          </div>
+          <button class="add-btn" style="width:100%;margin-top:6px;border-style:solid;font-weight:600" onclick="openBatchImport()">📋 <span data-i18n="batchImport">批量导入 (Excel 粘贴) / Batch Import</span></button>
         </div>
-        <button class="add-btn" style="width:100%;margin-top:6px;border-style:solid;font-weight:600" onclick="openBatchImport()">📋 <span data-i18n="batchImport">批量导入 (Excel 粘贴) / Batch Import</span></button>
       </div>
 
       <button class="btn" onclick="runOptimize()" data-i18n="optimize">计算最优方案 / Optimize</button>
@@ -561,9 +587,9 @@
   </div>
 </div>
 
-<script src="lib-loader.js?v=20260916C"></script>
-<script src="app.js?v=20260916C"></script>
-<script src="pallet-optimizer.js?v=20260916C"></script>
+<script src="lib-loader.js?v=20260916D"></script>
+<script src="app.js?v=20260916D"></script>
+<script src="pallet-optimizer.js?v=20260916D"></script>
 <div id="tooltip"></div>
 
 <!-- Batch import modal -->
@@ -587,7 +613,7 @@
 <!-- 项目版本号角标（右下角）：YYYYMMDD + 当天第 N 版字母，如 20260916A。
      数据源优先级：/api/version（后端按 git 实时算）→ version.json（Docker 镜像/静态托管）→ 下面的内嵌兜底值。
      内嵌值由 `npm run version:sync` 自动同步，直接用浏览器打开 HTML 也能显示。 -->
-<div class="ver-tag" id="verTag" data-version="20260916C" title="版本 20260916A">
+<div class="ver-tag" id="verTag" data-version="20260916D" title="版本 20260916A">
   <span class="ver-tag__v">20260916A</span><span class="ver-tag__hash"></span>
 </div>
 </body>

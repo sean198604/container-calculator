@@ -6,6 +6,7 @@
 const I18N = {
   zh: {
     containerSec:'集装箱', containerType:'集装箱类型', custom:'自定义',
+    secToggle:'点击标题折叠 / 展开',
     maxH:'限高 (cm)', cbmRate:'装载率目标 %',
     autoHint:'自动组合 20GP / 40GP / 40HQ / 45HQ 找最优搭配', containerCompare:'集装箱对比',
     products:'外箱明细', productHint:'添加各类外箱，系统统一装入同一批集装箱',
@@ -68,6 +69,7 @@ const I18N = {
   },
   en: {
     containerSec:'Container', containerType:'Container Type', custom:'Custom',
+    secToggle:'Click the title to collapse / expand',
     maxH:'Max Height (cm)', cbmRate:'Target Fill %',
     autoHint:'Auto-mix 20GP / 40GP / 40HQ / 45HQ for optimal combination', containerCompare:'Container Comparison',
     products:'Carton List', productHint:'Add any mix of cartons — all packed into same containers',
@@ -2360,6 +2362,59 @@ function applyPanelState(v){
 }
 
 // =====================================================================
+// 左侧栏卡片折叠（集装箱 / 外箱明细）
+// 标题整行可点：点一下收起，再点展开。
+// 折叠状态以 .section 上的 class 为唯一真源，并存进 localStorage，刷新后保持。
+// 语言切换只改 textContent、不动 class，所以不会被冲掉；产品列表重渲染也只在
+// .section-body 内部，同理不受影响。
+// =====================================================================
+const SEC_COLLAPSE_KEY = 'cc.secCollapsed';
+function toggleSection(titleEl){
+  const sec = titleEl && titleEl.parentElement;
+  if (!sec || !sec.classList || !sec.classList.contains('section')) return;
+  const collapsed = sec.classList.toggle('collapsed');
+  if (titleEl.setAttribute) titleEl.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  saveSectionCollapse();
+}
+function saveSectionCollapse(){
+  try {
+    const m = {};
+    const list = document.querySelectorAll('.section[id]');
+    for (let i = 0; i < list.length; i++){
+      m[list[i].id] = list[i].classList.contains('collapsed') ? 1 : 0;
+    }
+    localStorage.setItem(SEC_COLLAPSE_KEY, JSON.stringify(m));
+  } catch(e){ /* 隐私模式 / 存储禁用时静默降级：只是不记忆，不影响折叠 */ }
+}
+function initSectionCollapse(){
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(SEC_COLLAPSE_KEY) || '{}') || {}; } catch(e){ saved = {}; }
+  const list = document.querySelectorAll('.section[id]');
+  for (let i = 0; i < list.length; i++){
+    const sec = list[i];
+    const on  = !!saved[sec.id];
+    if (on) sec.classList.add('collapsed'); else sec.classList.remove('collapsed');
+    const t = sec.querySelector('.section-title.sec-toggle');
+    if (t && t.setAttribute){
+      t.setAttribute('aria-expanded', on ? 'false' : 'true');
+      // 键盘可达性：折叠标题本质是个按钮，Tab 能聚焦、Enter/Space 能触发
+      t.setAttribute('role', 'button');
+      t.setAttribute('tabindex', '0');
+      if (!t.__secKeyBound){
+        t.__secKeyBound = true;
+        t.addEventListener('keydown', function(ev){
+          const k = ev.key;
+          if (k === 'Enter' || k === ' ' || k === 'Spacebar'){
+            ev.preventDefault();
+            toggleSection(t);
+          }
+        });
+      }
+    }
+  }
+}
+
+// =====================================================================
 // QUICK VIEW SWITCH (Mode A) — top / front(door) / side / iso
 // =====================================================================
 let lastViewMode = 'iso';
@@ -2736,6 +2791,8 @@ document.addEventListener('DOMContentLoaded', () => {
   try { initVersionTag(); } catch(e){}
   // 面板折叠状态内联强控：DOM 就绪即同步，不依赖 3D 加载
   try { document.querySelectorAll('.mode-view').forEach(v=>applyPanelState(v)); } catch(e){}
+  // 左侧栏卡片折叠状态回填：同样不等 3D，避免首屏闪一下展开态
+  try { initSectionCollapse(); } catch(e){}
   // 必须等 THREE 与 OrbitControls 二者都就绪，否则 new THREE.OrbitControls 会抛
   // "not a constructor"，导致 initThree 中断、3D 画布黑屏（初始化竞态，时好时坏）。
   if (window.THREE && window.THREE.OrbitControls) { bootApp(); return; }
