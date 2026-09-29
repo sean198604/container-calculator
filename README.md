@@ -1,5 +1,3 @@
-<p align="center"><img src="assets/readme-cover.png" alt="Container Calculator project cover" width="100%" /></p>
-
 <div align="center">
 
 # 智能装箱计算器 · Container Load Calculator
