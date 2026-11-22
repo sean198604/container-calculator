@@ -1,0 +1,24 @@
+# 统一文本文件行尾符为 LF，与 Linux 运行环境及服务器部署副本保持一致，
+# 避免 CRLF 造满屏假差异。二进制文件显式声明，不参与转换。
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.xz binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.mp4 binary
+*.webm binary
+*.so binary
+*.node binary
